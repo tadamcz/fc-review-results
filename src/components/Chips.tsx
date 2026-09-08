@@ -1,4 +1,5 @@
 // The small labels used on rows and file pages: severity, finding kind, fix outcome.
+import { useShowConfidence } from "../data/confidence";
 import type { FixRow, IndexRow, Severity } from "../data/schema";
 import { kindLabel } from "../data/schema";
 
@@ -11,6 +12,7 @@ export function KindChip({ kind }: { kind: string }) {
 }
 
 export function Confidence({ value }: { value: number }) {
+  if (!useShowConfidence()) return null;
   return (
     <span className="confidence muted" title="The reviewer's stated probability that this is a real defect">
       p = {value.toFixed(2)}

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router";
 import { TopBar } from "../components/TopBar";
+import { showConfidence } from "../data/confidence";
 import { formatDate, money } from "../data/filters";
 import { useIndex } from "../data/load";
 import { orderedCollections } from "./ListPage";
@@ -43,8 +44,11 @@ export function AboutPage() {
           declaration does not state the mathematical claim its source poses.
         </p>
         <p>
-          The findings are the model's, unreviewed by a human. Each comes with the model's stated probability that it is a real defect, the source evidence it relied on, and
-          usually a Lean experiment; read them as leads for a maintainer, not as verdicts. The run was launched on {formatDate(m.started_at)} and cost {money(m.cost_usd)}.
+          The findings are the model's, unreviewed by a human. Each comes with the source evidence it relied on and usually a Lean experiment
+          {showConfidence(m)
+            ? ", and with the model's stated probability that it is a real defect"
+            : ". The model also reported a probability for each finding, but it reports 1.0 for nearly everything, so those numbers are not shown"}
+          ; read the findings as leads for a maintainer, not as verdicts. The run was launched on {formatDate(m.started_at)} and cost {money(m.cost_usd)}.
         </p>
 
         <h2>What the reviewer did</h2>
@@ -126,7 +130,7 @@ export function AboutPage() {
 
         <h2>Caveats</h2>
         <ul>
-          <li>There is no ground truth. A finding at probability 1.0 is still one model's reading of one source.</li>
+          <li>There is no ground truth. Every finding is one model's reading of one source.</li>
           <li>
             The reviewer read sources online as they were on the day of the run; erdosproblems.com and Wikipedia change, and some sources were behind paywalls (the
             reviewer says so under "could not verify").

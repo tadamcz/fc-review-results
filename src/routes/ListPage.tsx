@@ -2,6 +2,7 @@ import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useSta
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { RowChips } from "../components/Chips";
 import { TopBar } from "../components/TopBar";
+import { ConfidenceContext, effectiveState, showConfidence } from "../data/confidence";
 import { CONF_STEPS, DEFAULT_STATE, SHOW_LABELS, applyFilters, hasFilters, misfFiltersApply, money, parseState, serializeState, type ListState, type Show, type Sort } from "../data/filters";
 import { useIndex } from "../data/load";
 import { kindLabel, type IndexRow, type Meta } from "../data/schema";
@@ -60,12 +61,14 @@ export function ListPage() {
   if (index.status === "loading") return <Shell><p className="muted">Loading…</p></Shell>;
   if (index.status === "error") return <Shell><p className="error">Could not load the index: {index.error}</p></Shell>;
   const { meta, files } = index.data;
-  const visible = applyFilters(files, { ...state, q: deferredQ });
+  const showConf = showConfidence(meta);
+  const visible = applyFilters(files, effectiveState({ ...state, q: deferredQ }, showConf));
   const search = params.toString();
   const t = meta.totals;
 
   return (
     <Shell>
+      <ConfidenceContext.Provider value={showConf}>
       <p className="count-line">
         {t.files} files of formal-conjectures at{" "}
         <a href={meta.fc_tree_url} target="_blank" rel="noopener noreferrer">
@@ -92,29 +95,30 @@ export function ListPage() {
             />
             <label className="sort">
               Sort
-              <select value={state.sort} onChange={(e) => update({ sort: e.target.value as Sort })}>
+              <select value={effectiveState(state, showConf).sort} onChange={(e) => update({ sort: e.target.value as Sort })}>
                 <option value="misf">most misformalizations</option>
-                <option value="confidence">highest confidence</option>
+                {showConf && <option value="confidence">highest confidence</option>}
                 <option value="cost">most expensive review</option>
                 <option value="id">file id A–Z</option>
               </select>
             </label>
             <span className="result-count muted">{visible.length === files.length ? `${files.length} files` : `${visible.length} of ${files.length} files`}</span>
           </div>
-          <Filters state={state} onChange={update} />
+          <Filters state={state} onChange={update} showConf={showConf} />
           {visible.length === 0 && <p className="muted empty">No files match.</p>}
           <ol className="rows">
             {visible.map((r) => (
-              <Row key={r.id} row={r} search={search} showCollection={!state.collection} />
+              <Row key={r.id} row={r} search={search} showCollection={!state.collection} showConf={showConf} />
             ))}
           </ol>
         </div>
       </div>
+      </ConfidenceContext.Provider>
     </Shell>
   );
 }
 
-function Filters({ state, onChange }: { state: ListState; onChange: (patch: Partial<ListState>) => void }) {
+function Filters({ state, onChange, showConf }: { state: ListState; onChange: (patch: Partial<ListState>) => void; showConf: boolean }) {
   const misf = misfFiltersApply(state.show);
   const inert = misf ? undefined : "Applies to misformalizations; not to this view";
   return (
@@ -140,6 +144,7 @@ function Filters({ state, onChange }: { state: ListState; onChange: (patch: Part
           ))}
         </select>
       </label>
+      {showConf && (
       <label className={`filter${misf ? "" : " inert"}`} title={inert}>
         Highest confidence ≥
         <select value={state.confMin === null ? "" : String(state.confMin)} disabled={!misf} onChange={(e) => onChange({ confMin: e.target.value === "" ? null : Number(e.target.value) })}>
@@ -151,7 +156,8 @@ function Filters({ state, onChange }: { state: ListState; onChange: (patch: Part
           ))}
         </select>
       </label>
-      {hasFilters(state) && (
+      )}
+      {hasFilters(effectiveState(state, showConf)) && (
         <button className="clear" onClick={() => onChange({ show: DEFAULT_STATE.show, kind: null, confMin: null })}>
           Clear
         </button>
@@ -204,7 +210,7 @@ function CollectionSelect({ meta, selected, onSelect }: { meta: Meta; selected: 
   );
 }
 
-const Row = memo(function Row({ row, search, showCollection }: { row: IndexRow; search: string; showCollection: boolean }) {
+const Row = memo(function Row({ row, search, showCollection, showConf }: { row: IndexRow; search: string; showCollection: boolean; showConf: boolean }) {
   const navigate = useNavigate();
   return (
     <li
@@ -227,8 +233,8 @@ const Row = memo(function Row({ row, search, showCollection }: { row: IndexRow; 
           {!row.headline && row.n_status_issues > 0 && <span className="muted">status issue only</span>}
         </span>
         <span className="counts">
-          {row.max_confidence !== null && <span title="highest confidence among the misformalizations">p ≤ {row.max_confidence.toFixed(2)}</span>}
-          {row.max_confidence !== null && " · "}
+          {showConf && row.max_confidence !== null && <span title="highest confidence among the misformalizations">p ≤ {row.max_confidence.toFixed(2)}</span>}
+          {showConf && row.max_confidence !== null && " · "}
           <span title="cost of the review">{money(row.cost_usd)}</span> · <span title="working time">{row.minutes} min</span>
         </span>
       </div>

@@ -7,6 +7,7 @@ import { Disclosure } from "../components/Disclosure";
 import { Markdown } from "../components/Markdown";
 import { Findings, Reformulations, ReviewerNotes, StatusIssues, jumpToLine } from "../components/Review";
 import { TopBar } from "../components/TopBar";
+import { ConfidenceContext, effectiveState, showConfidence } from "../data/confidence";
 import { applyFilters, neighbours, parseState } from "../data/filters";
 import { useFile, useIndex } from "../data/load";
 import type { FileEntry } from "../data/schema";
@@ -20,7 +21,11 @@ export function FilePage() {
   const file = useFile(id);
 
   const state = useMemo(() => parseState(search), [search]);
-  const ids = useMemo(() => (index.status === "ok" ? applyFilters(index.data.files, state).map((r) => r.id) : []), [index, state]);
+  const showConf = index.status === "ok" ? showConfidence(index.data.meta) : true;
+  const ids = useMemo(
+    () => (index.status === "ok" ? applyFilters(index.data.files, effectiveState(state, showConf)).map((r) => r.id) : []),
+    [index, state, showConf],
+  );
   const nav = id ? neighbours(ids, id) : { prev: null, next: null };
   const searchStr = search.toString();
 
@@ -57,7 +62,11 @@ export function FilePage() {
       <main className="page entry">
         {file.status === "loading" && <p className="muted">Loading…</p>}
         {file.status === "error" && <p className="error">Could not load this file: {file.error}</p>}
-        {file.status === "ok" && index.status === "ok" && <FileBody entry={file.data} search={searchStr} />}
+        {file.status === "ok" && index.status === "ok" && (
+          <ConfidenceContext.Provider value={showConf}>
+            <FileBody entry={file.data} search={searchStr} />
+          </ConfidenceContext.Provider>
+        )}
       </main>
     </>
   );

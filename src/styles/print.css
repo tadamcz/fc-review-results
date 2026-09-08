@@ -1,0 +1,12 @@
+@media print {
+  .topbar-nav, .actions, .view-toggle, .infile, .prevnext { display: none !important; }
+  .topbar { border: 0; }
+  .page { padding: 0; max-width: none; }
+  a { color: inherit; }
+  details > summary { list-style: none; }
+  .drawer summary h2::before { content: ""; }
+  pre.code { white-space: pre-wrap; overflow: visible; font-size: 0.78rem; }
+  pre.code .line { white-space: pre-wrap; }
+  .decl, .coverage-row, .alt, table tr { break-inside: avoid; }
+  .status.warn, .status.fc, .notes, .statement, .decl.tinted { background: transparent; }
+}

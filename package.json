@@ -1,0 +1,38 @@
+{
+  "name": "fc-review-results",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "pnpm check && tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "check": "tsx scripts/check.ts"
+  },
+  "dependencies": {
+    "diff": "9.0.0",
+    "katex": "0.18.5",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-markdown": "10.1.0",
+    "react-router": "8.3.1",
+    "rehype-katex": "7.0.1",
+    "remark-math": "6.0.0",
+    "shiki": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/katex": "0.16.8",
+    "@types/node": "22.19.19",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "@vitejs/plugin-react": "6.1.1",
+    "tsx": "4.23.13",
+    "typescript": "5.9.3",
+    "vite": "8.2.2",
+    "zod": "4.5.4"
+  },
+  "packageManager": "pnpm@11.19.0"
+}

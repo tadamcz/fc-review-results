@@ -7,7 +7,7 @@ import { Disclosure } from "../components/Disclosure";
 import { Markdown } from "../components/Markdown";
 import { Findings, Reformulations, ReviewerNotes, StatusIssues, jumpToLine } from "../components/Review";
 import { TopBar } from "../components/TopBar";
-import { applyFilters, money, neighbours, parseState } from "../data/filters";
+import { applyFilters, neighbours, parseState } from "../data/filters";
 import { useFile, useIndex } from "../data/load";
 import type { FileEntry } from "../data/schema";
 
@@ -128,11 +128,6 @@ function Summary({ entry, misf }: { entry: FileEntry; misf: number }) {
     <div className={`status-line`}>
       <div className={`status ${misf ? "warn" : ""}`}>
         <strong>{parts.join(" · ")}</strong> <FixChip fix={entry.fix} />
-        <span className="muted small">
-          {" "}
-          · review cost {money(entry.sample.cost_usd)}, {entry.sample.working_minutes} min working time
-          {entry.sample.examples_shown !== null ? `, ${entry.sample.examples_shown} past fixes shown as examples` : ""}
-        </span>
       </div>
       {entry.sample.transcript_url && (
         <div className="actions">

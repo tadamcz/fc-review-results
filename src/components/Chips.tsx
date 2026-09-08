@@ -40,7 +40,7 @@ export function RowChips({ row }: { row: IndexRow }) {
         </span>
       )}
       {row.n_status_issues > 0 && (
-        <span className="chip status">
+        <span className="chip status-issue">
           {row.n_status_issues} status issue{row.n_status_issues === 1 ? "" : "s"}
         </span>
       )}

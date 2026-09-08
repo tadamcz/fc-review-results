@@ -143,7 +143,7 @@ p { margin: 0.5rem 0; }
 .chip.sev-misformalization { border-color: var(--misf-line); background: var(--misf-bg); color: var(--misf); font-weight: 700; }
 .chip.sev-questionable { border-color: var(--quest-line); background: var(--quest-bg); color: var(--quest); }
 .chip.sev-minor { border-color: var(--minor-line); background: var(--minor-bg); color: var(--minor); }
-.chip.status { border-color: var(--status-line); background: var(--status-bg); color: var(--status); }
+.chip.status-issue { border-color: var(--status-line); background: var(--status-bg); color: var(--status); }
 .chip.proved { border-color: var(--reform-line); background: var(--reform-bg); color: var(--reform); }
 .chip.kind { background: var(--paper); }
 .chip.fix-ok { border-color: var(--ok-line); background: var(--ok-bg); color: var(--ok); }
@@ -166,7 +166,7 @@ p { margin: 0.5rem 0; }
 .finding.sev-misformalization { border-left-color: var(--misf-line); }
 .finding.sev-questionable { border-left-color: var(--quest-line); }
 .finding.sev-minor { border-left-color: var(--minor-line); }
-.finding.status { border-left-color: var(--status-line); background: var(--status-bg); }
+.finding.status-issue { border-left-color: var(--status-line); background: var(--status-bg); }
 .finding.reform { border-left-color: var(--reform-line); background: var(--reform-bg); }
 .finding-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; font-size: 0.92rem; margin-bottom: 4px; }
 .finding-head .fq { font-size: 0.95rem; color: var(--ink); }

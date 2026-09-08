@@ -117,10 +117,10 @@ export function StatusIssues({ issues, search }: { issues: StatusIssue[]; search
       <p className="muted small">The statement is the problem as posed; what the file records about its status disagrees with the source. Not counted as misformalizations.</p>
       <ol className="findings">
         {issues.map((s, i) => (
-          <li key={i} className="finding status">
+          <li key={i} className="finding status-issue">
             <div className="finding-head">
               <DeclLink name={s.declaration} line={s.line} search={search} />
-              <span className="chip status">status</span>
+              <span className="chip status-issue">status</span>
               <Confidence value={s.confidence} />
             </div>
             <dl className="kv">

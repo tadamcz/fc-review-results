@@ -139,14 +139,18 @@ export function AboutPage() {
         <h2>Data and code</h2>
         <p>
           The task, prompts and exporter live on the <a href={TASK_URL} target="_blank" rel="noopener noreferrer">fc-review branch</a> of epoch-research/autoformalization; this
-          site's source and data are at <a href={REPO_URL} target="_blank" rel="noopener noreferrer">tadamcz/fc-review-results</a>. Eval set <code>{m.run_id}</code>
-          {m.viewer_url && (
+          site's source and data are at <a href={REPO_URL} target="_blank" rel="noopener noreferrer">tadamcz/fc-review-results</a>. Eval set <code>{m.run_id}</code>; data
+          exported {formatDate(m.generated_at)}.
+          {m.transcript_base && (
             <>
               {" "}
-              (<a href={m.viewer_url} target="_blank" rel="noopener noreferrer">transcripts</a>)
+              Full transcripts of every model call, in the Inspect log viewer:{" "}
+              <a href={m.transcript_base} target="_blank" rel="noopener noreferrer">
+                {m.run_id}
+              </a>
+              ; each file page links to its own.
             </>
           )}
-          ; data exported {formatDate(m.generated_at)}.
         </p>
         <p className="made-by">
           Made by <a href="https://tadamcz.com" target="_blank" rel="noopener noreferrer">Tom Adamczewski</a> at Epoch AI.

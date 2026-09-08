@@ -57,13 +57,13 @@ export function FilePage() {
       <main className="page entry">
         {file.status === "loading" && <p className="muted">Loading…</p>}
         {file.status === "error" && <p className="error">Could not load this file: {file.error}</p>}
-        {file.status === "ok" && index.status === "ok" && <FileBody entry={file.data} search={searchStr} viewerUrl={index.data.meta.viewer_url} />}
+        {file.status === "ok" && index.status === "ok" && <FileBody entry={file.data} search={searchStr} />}
       </main>
     </>
   );
 }
 
-function FileBody({ entry, search, viewerUrl }: { entry: FileEntry; search: string; viewerUrl: string | null }) {
+function FileBody({ entry, search }: { entry: FileEntry; search: string }) {
   const misf = entry.review.findings.filter((f) => f.severity === "misformalization");
   const marks = useMemo(() => {
     const m: Record<number, string> = {};
@@ -93,7 +93,7 @@ function FileBody({ entry, search, viewerUrl }: { entry: FileEntry; search: stri
         </a>{" "}
         · <span className="muted">module</span> <code>{entry.module}</code>
       </p>
-      <Summary entry={entry} misf={misf.length} viewerUrl={viewerUrl} />
+      <Summary entry={entry} misf={misf.length} />
 
       <Findings entry={entry} search={search} />
       <FixSection entry={entry} />
@@ -111,7 +111,7 @@ function FileBody({ entry, search, viewerUrl }: { entry: FileEntry; search: stri
   );
 }
 
-function Summary({ entry, misf, viewerUrl }: { entry: FileEntry; misf: number; viewerUrl: string | null }) {
+function Summary({ entry, misf }: { entry: FileEntry; misf: number }) {
   const r = entry.review;
   const parts: string[] = [];
   if (!r.submitted) parts.push("no review was submitted");
@@ -132,17 +132,16 @@ function Summary({ entry, misf, viewerUrl }: { entry: FileEntry; misf: number; v
           {" "}
           · review cost {money(entry.sample.cost_usd)}, {entry.sample.working_minutes} min working time
           {entry.sample.examples_shown !== null ? `, ${entry.sample.examples_shown} past fixes shown as examples` : ""}
-          {viewerUrl && entry.sample.uuid ? (
-            <>
-              {" · "}
-              <a href={viewerUrl} target="_blank" rel="noopener noreferrer">
-                transcript
-              </a>{" "}
-              <span title="sample uuid in the Hawk viewer">({entry.sample.uuid.slice(0, 8)})</span>
-            </>
-          ) : null}
         </span>
       </div>
+      {entry.sample.transcript_url && (
+        <div className="actions">
+          <a className="btn link" href={entry.sample.transcript_url} target="_blank" rel="noopener noreferrer" title="Every model call of this review and its fix, in the Inspect log viewer">
+            Transcript
+          </a>
+          <span className="muted small">the full conversation of this review in the Inspect log viewer, including every tool call</span>
+        </div>
+      )}
     </div>
   );
 }

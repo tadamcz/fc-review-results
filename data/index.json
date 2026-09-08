@@ -4,6 +4,7 @@
   "run_id": "fc-review-p85vosieyiuqtari",
   "log_name": "2026-09-07T17-29-19-00-00_fc-review_ZYwnPVBk8gMoRmsHr4eAdi.eval",
   "viewer_url": "https://viewer.hawk.hawkbench.com/eval-set/fc-review-p85vosieyiuqtari",
+  "transcript_base": "https://epochai-public-eval-logs-manual.s3.amazonaws.com/eval-transcripts/autoformalization/fc-review-p85vosieyiuqtari/index.html",
   "task": "autoformalization/fc_review",
   "model": "epoch/gpt-6-astra",
   "reasoning_effort": "max",
@@ -164,7 +165,7 @@
     "n_status_issues": 2
    }
   },
-  "generated_at": "2026-09-08T11:04:29+00:00"
+  "generated_at": "2026-09-08T13:20:20+00:00"
  },
  "files": [
   {

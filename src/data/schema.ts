@@ -84,6 +84,7 @@ export const Meta = z.object({
   run_id: z.string(),
   log_name: z.string(),
   viewer_url: z.string().nullable(),
+  transcript_base: z.string().nullable(),
   task: z.string().nullable(),
   model: z.string().nullable(),
   reasoning_effort: z.string().nullable(),
@@ -157,6 +158,7 @@ export const FileEntry = z.object({
   fix: FileFix,
   sample: z.object({
     uuid: z.string().nullable(),
+    transcript_url: z.string().nullable(),
     cost_usd: z.number(),
     working_minutes: z.number(),
     total_minutes: z.number(),

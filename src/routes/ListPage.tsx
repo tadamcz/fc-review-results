@@ -2,7 +2,7 @@ import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useSta
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { RowChips } from "../components/Chips";
 import { TopBar } from "../components/TopBar";
-import { CONF_STEPS, DEFAULT_STATE, SHOW_LABELS, applyFilters, hasFilters, money, parseState, serializeState, type ListState, type Show, type Sort } from "../data/filters";
+import { CONF_STEPS, DEFAULT_STATE, SHOW_LABELS, applyFilters, hasFilters, misfFiltersApply, money, parseState, serializeState, type ListState, type Show, type Sort } from "../data/filters";
 import { useIndex } from "../data/load";
 import { kindLabel, type IndexRow, type Meta } from "../data/schema";
 
@@ -115,6 +115,8 @@ export function ListPage() {
 }
 
 function Filters({ state, onChange }: { state: ListState; onChange: (patch: Partial<ListState>) => void }) {
+  const misf = misfFiltersApply(state.show);
+  const inert = misf ? undefined : "Applies to misformalizations; not to this view";
   return (
     <div className="filters" role="group" aria-label="Filters">
       <label className="filter">
@@ -127,9 +129,9 @@ function Filters({ state, onChange }: { state: ListState; onChange: (patch: Part
           ))}
         </select>
       </label>
-      <label className="filter">
-        Kind
-        <select value={state.kind ?? ""} onChange={(e) => onChange({ kind: e.target.value || null })}>
+      <label className={`filter${misf ? "" : " inert"}`} title={inert}>
+        Misformalization kind
+        <select value={state.kind ?? ""} disabled={!misf} onChange={(e) => onChange({ kind: e.target.value || null })}>
           <option value="">any</option>
           {KINDS.map((k) => (
             <option key={k} value={k}>
@@ -138,9 +140,9 @@ function Filters({ state, onChange }: { state: ListState; onChange: (patch: Part
           ))}
         </select>
       </label>
-      <label className="filter">
-        Confidence ≥
-        <select value={state.confMin === null ? "" : String(state.confMin)} onChange={(e) => onChange({ confMin: e.target.value === "" ? null : Number(e.target.value) })}>
+      <label className={`filter${misf ? "" : " inert"}`} title={inert}>
+        Highest confidence ≥
+        <select value={state.confMin === null ? "" : String(state.confMin)} disabled={!misf} onChange={(e) => onChange({ confMin: e.target.value === "" ? null : Number(e.target.value) })}>
           <option value="">any</option>
           {CONF_STEPS.map((v) => (
             <option key={v} value={String(v)}>

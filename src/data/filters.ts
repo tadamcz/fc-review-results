@@ -27,6 +27,13 @@ export const DEFAULT_STATE: ListState = { q: "", collection: null, show: "flagge
 
 export const CONF_STEPS = [0.5, 0.7, 0.8, 0.9, 0.95, 0.99];
 
+// `kinds` and `max_confidence` describe a file's misformalization-severity
+// findings, so the Kind and Confidence filters only mean something when the
+// shown set is about misformalizations; for the other views they are inert.
+export function misfFiltersApply(show: Show): boolean {
+  return show === "flagged" || show === "all" || show === "fixed" || show === "gave_up";
+}
+
 function num(v: string | null): number | null {
   if (v === null || v === "") return null;
   const n = Number(v);
@@ -61,7 +68,7 @@ export function serializeState(state: ListState): URLSearchParams {
 }
 
 export function hasFilters(state: ListState): boolean {
-  return state.show !== DEFAULT_STATE.show || state.kind !== null || state.confMin !== null;
+  return state.show !== DEFAULT_STATE.show || (misfFiltersApply(state.show) && (state.kind !== null || state.confMin !== null));
 }
 
 function matchesShow(r: IndexRow, show: Show): boolean {
@@ -86,11 +93,12 @@ function matchesShow(r: IndexRow, show: Show): boolean {
 export function applyFilters(rows: IndexRow[], state: ListState): IndexRow[] {
   const q = state.q.trim().toLowerCase();
   const terms = q ? q.split(/\s+/) : [];
+  const misf = misfFiltersApply(state.show);
   const out = rows.filter((r) => {
     if (state.collection && r.collection !== state.collection) return false;
     if (!matchesShow(r, state.show)) return false;
-    if (state.kind && !r.kinds.includes(state.kind)) return false;
-    if (state.confMin !== null && (r.max_confidence === null || r.max_confidence < state.confMin)) return false;
+    if (misf && state.kind && !r.kinds.includes(state.kind)) return false;
+    if (misf && state.confMin !== null && (r.max_confidence === null || r.max_confidence < state.confMin)) return false;
     if (terms.length && !terms.every((t) => r.search.includes(t))) return false;
     return true;
   });

@@ -76,9 +76,9 @@ function FileBody({ entry, search }: { entry: FileEntry; search: string }) {
   const misf = entry.review.findings.filter((f) => f.severity === "misformalization");
   const marks = useMemo(() => {
     const m: Record<number, string> = {};
-    for (const r of entry.review.reformulations) if (r.line) m[r.line] = "mark-reform";
-    for (const s of entry.review.status_issues) if (s.line) m[s.line] = "mark-status";
-    for (const f of entry.review.findings) if (f.line) m[f.line] = `mark-${f.severity}`;
+    for (const r of entry.review.reformulations) if (r.line) m[r.line] = "reform";
+    for (const s of entry.review.status_issues) if (s.line) m[s.line] = "status";
+    for (const f of entry.review.findings) if (f.line) m[f.line] = f.severity;
     return m;
   }, [entry]);
   return (
@@ -111,9 +111,10 @@ function FileBody({ entry, search }: { entry: FileEntry; search: string }) {
       <ReviewerNotes entry={entry} />
 
       <h2 id="file">The file at the reviewed commit</h2>
-      <p className="muted small">
-        Marked lines: <span className="swatch mark-misformalization" /> misformalization · <span className="swatch mark-questionable" /> questionable ·{" "}
-        <span className="swatch mark-minor" /> minor · <span className="swatch mark-status" /> status issue · <span className="swatch mark-reform" /> reformulation judged equivalent
+      <p className="muted small legend">
+        Gutter marks: <span className="gutter-mark gm-misformalization">✕</span> misformalization · <span className="gutter-mark gm-questionable">?</span> questionable ·{" "}
+        <span className="gutter-mark gm-minor">~</span> minor · <span className="gutter-mark gm-status">⧗</span> status issue · <span className="gutter-mark gm-reform">≡</span>{" "}
+        reformulation judged equivalent
       </p>
       <Code code={entry.lean} startLine={1} className="whole-file" marks={marks} />
     </>

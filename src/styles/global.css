@@ -39,9 +39,10 @@
   --link-hover: #1d4ed8;
   --focus: #2563eb;
   /* severities */
-  --misf: #b91c1c;
-  --misf-bg: #fef2f2;
-  --misf-line: #ef4444;
+  /* misformalizations are orange, not red: red/green stay reserved for the diff */
+  --misf: #c2410c;
+  --misf-bg: #fff7ed;
+  --misf-line: #f97316;
   --quest: #b45309;
   --quest-bg: #fffbeb;
   --quest-line: #f59e0b;
@@ -78,7 +79,7 @@ h3 { font-size: 1.05rem; margin: 1.4rem 0 0.5rem; font-weight: 700; }
 p { margin: 0.5rem 0; }
 .muted { color: var(--muted); }
 .small { font-size: 0.9em; }
-.error { color: var(--misf); }
+.error { color: #b91c1c; }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
@@ -149,7 +150,7 @@ p { margin: 0.5rem 0; }
 .chip.proved { border-color: var(--reform-line); background: var(--reform-bg); color: var(--reform); }
 .chip.kind { background: var(--paper); }
 .chip.fix-ok { border-color: var(--ok-line); background: var(--ok-bg); color: var(--ok); }
-.chip.fix-bad { border-color: var(--misf-line); background: var(--paper); color: var(--misf); }
+.chip.fix-bad { border-color: #ef4444; background: var(--paper); color: #b91c1c; }
 .chip.fix-gaveup { border-color: var(--line-strong); background: var(--paper); color: var(--muted); }
 .chip.fix-none { border-color: var(--line-strong); background: var(--paper); color: var(--muted); }
 .chip.warn { border-color: var(--quest-line); background: var(--quest-bg); color: var(--quest); }
@@ -221,18 +222,24 @@ pre.code.numbered .line::before {
 pre.code.whole-file { border: 1px solid var(--line); border-radius: 6px; padding: 8px 4px; }
 pre.code a { color: inherit; text-decoration: underline dotted; text-underline-offset: 2px; }
 pre.code a:hover { color: var(--link); text-decoration: underline; }
-pre.code .line.mark-misformalization { background: var(--misf-bg); box-shadow: inset 3px 0 0 var(--misf-line); }
-pre.code .line.mark-questionable { background: var(--quest-bg); box-shadow: inset 3px 0 0 var(--quest-line); }
-pre.code .line.mark-minor { background: var(--minor-bg); box-shadow: inset 3px 0 0 var(--minor-line); }
-pre.code .line.mark-status { background: var(--status-bg); box-shadow: inset 3px 0 0 var(--status-line); }
-pre.code .line.mark-reform { background: var(--reform-bg); box-shadow: inset 3px 0 0 var(--reform-line); }
-pre.code .line.added { background: var(--ok-bg); box-shadow: inset 3px 0 0 var(--ok-line); }
-.swatch { display: inline-block; width: 0.9em; height: 0.9em; vertical-align: -0.1em; border-radius: 2px; border: 1px solid var(--line-strong); }
-.swatch.mark-misformalization { background: var(--misf-bg); border-color: var(--misf-line); }
-.swatch.mark-questionable { background: var(--quest-bg); border-color: var(--quest-line); }
-.swatch.mark-minor { background: var(--minor-bg); border-color: var(--minor-line); }
-.swatch.mark-status { background: var(--status-bg); border-color: var(--status-line); }
-.swatch.mark-reform { background: var(--reform-bg); border-color: var(--reform-line); }
+/* marks: a glyph in the gutter carries the category; tints stay faint and off the red/green axis */
+pre.code .gutter-mark { display: inline-block; width: 1.3em; margin-right: 0.2em; text-align: center; user-select: none; font-weight: 700; color: transparent; }
+pre.code .gutter-mark.gm-misformalization { color: #c2410c; }
+pre.code .gutter-mark.gm-questionable { color: #7c3aed; }
+pre.code .gutter-mark.gm-minor { color: #64748b; }
+pre.code .gutter-mark.gm-status { color: #1d4ed8; }
+pre.code .gutter-mark.gm-reform { color: #475569; }
+pre.code .gutter-mark.gm-added { color: #1d4ed8; }
+pre.code .line.mark-misformalization { background: #fff7ed; }
+pre.code .line.mark-questionable { background: #f5f3ff; }
+pre.code .line.mark-status { background: #eff6ff; }
+pre.code .line.mark-added { background: #eff6ff; }
+.legend .gutter-mark { display: inline-block; width: 1.3em; text-align: center; font-family: var(--font-mono); font-weight: 700; }
+.legend .gm-misformalization { color: #c2410c; }
+.legend .gm-questionable { color: #7c3aed; }
+.legend .gm-minor { color: #64748b; }
+.legend .gm-status { color: #1d4ed8; }
+.legend .gm-reform { color: #475569; }
 
 /* diff */
 .diffview { margin: 8px 0 4px; }
@@ -246,8 +253,8 @@ pre.diff .gutter { display: inline-block; width: 3.2em; text-align: right; color
 pre.diff .sign { display: inline-block; width: 1.2em; text-align: center; user-select: none; color: var(--muted); }
 pre.diff .line.add { background: var(--ok-bg); }
 pre.diff .line.add .sign { color: var(--ok); font-weight: 700; }
-pre.diff .line.del { background: var(--misf-bg); }
-pre.diff .line.del .sign { color: var(--misf); font-weight: 700; }
+pre.diff .line.del { background: #fef2f2; }
+pre.diff .line.del .sign { color: #991b1b; font-weight: 700; }
 pre.diff .hunk + .hunk .hunk-head { border-top: 1px solid var(--line); }
 
 /* tables */

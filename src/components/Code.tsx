@@ -1,11 +1,23 @@
 // A Lean code block with line numbers: highlighted once the client-side
 // highlighter is ready, plain text until then. URLs are links in both states.
-// `marks` gives selected lines a class (a finding's declaration, an added line)
-// and every numbered line gets an id L<n> so findings can link to it.
+// `marks` maps line numbers to a mark kind; a marked line gets the class
+// mark-<kind> and a glyph in the gutter (every numbered line carries the
+// gutter span so columns stay aligned), and every numbered line gets an id
+// L<n> so findings can link to it. The glyphs, not colours, carry the meaning:
+// the diff view is the one place red/green is used.
 import { useMemo } from "react";
 import type { ThemedToken } from "shiki/core";
 import { tokenizeLean, useHighlighter } from "../highlight";
 import { linkify } from "./linkify";
+
+export const MARK_GLYPHS: Record<string, string> = {
+  misformalization: "✕",
+  questionable: "?",
+  minor: "~",
+  status: "⧗",
+  reform: "≡",
+  added: "+",
+};
 
 function tokenStyle(t: ThemedToken): React.CSSProperties | undefined {
   const fs = t.fontStyle ?? 0;
@@ -42,7 +54,16 @@ export function Code({
     if (!startLine) return { className: "line" };
     const n = startLine + i;
     const mark = marks?.[n];
-    return { className: `line${mark ? ` ${mark}` : ""}`, id: `L${n}` };
+    return { className: `line${mark ? ` mark-${mark}` : ""}`, id: `L${n}` };
+  };
+  const gutter = (i: number) => {
+    if (!startLine) return null;
+    const mark = marks?.[startLine + i];
+    return (
+      <span className={`gutter-mark${mark ? ` gm-${mark}` : ""}`} aria-hidden="true">
+        {mark ? MARK_GLYPHS[mark] ?? "•" : ""}
+      </span>
+    );
   };
   if (tokens !== null) {
     return (
@@ -50,6 +71,7 @@ export function Code({
         <code>
           {tokens.map((line, i) => (
             <span {...lineProps(i)} key={i}>
+              {gutter(i)}
               {line.map((t, j) => (
                 <span key={j} style={tokenStyle(t)}>
                   {linkify(t.content)}
@@ -68,6 +90,7 @@ export function Code({
       <code>
         {lines.map((l, i) => (
           <span {...lineProps(i)} key={i}>
+            {gutter(i)}
             {linkify(l)}
             {i < lines.length - 1 ? "\n" : ""}
           </span>

@@ -138,7 +138,7 @@ async function main() {
         "",
         ...bullets.map((b) => `- ${b}`),
         "",
-        `<sub>Found by a language-model audit of the repository at ${sha}; not reviewed by a human.</sub>`,
+        `<sub>Found by a language-model audit of the repository at ${sha}; this issue's title and description were written by a language model as well. Not reviewed by a human.</sub>`,
       ].join("\n") + "\n";
     const comment = draft.related_comments.length ? draft.related_comments.map((c) => c.comment).join("\n\n") + "\n" : null;
     return { title, body, comment };

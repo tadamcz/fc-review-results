@@ -49,11 +49,12 @@ run: `drafts.jsonl` (one line per flagged file not already reported upstream:
 the issue title's gist, a one-sentence summary, and for files with an existing
 thread the "Related:" comment pointing at it; written by language-model agents
 from the findings, then reviewed) and `created.jsonl` (what `pnpm issues`
-created, so a re-run never files a file twice).
+created, so a re-run never files a file twice). `pnpm run` with the `--`
+separator matters: bare `pnpm issues --run` hands the flag to pnpm.
 
 ```sh
-pnpm issues -- --run <sha>            # dry run: validate, check labels, write issues/<sha>/preview.md
-pnpm issues -- --run <sha> --create   # file them (--limit N, --only id,id, --repo owner/name, --sleep ms)
+pnpm run issues -- --run <sha>            # dry run: validate, check labels, write issues/<sha>/preview.md
+pnpm run issues -- --run <sha> --create   # file them (--limit N, --only id,id, --repo owner/name, --sleep ms)
 ```
 
 Each issue is titled `<file id>: <gist>`; its body is the summary, the file's

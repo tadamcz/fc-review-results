@@ -3,9 +3,9 @@
 // from the reviewed drafts in issues/<sha>/drafts.jsonl, and records what it created in
 // issues/<sha>/created.jsonl so that a re-run never files a file twice.
 //
-//   pnpm issues -- --run c90271f0fa         dry run: validates the drafts against the run, checks the
+//   pnpm run issues -- --run c90271f0fa         dry run: validates the drafts against the run, checks the
 //                                           labels exist, writes issues/<sha>/preview.md, creates nothing
-//   pnpm issues -- --run c90271f0fa --create   files the issues and their "Related:" comments, pausing
+//   pnpm run issues -- --run c90271f0fa --create   files the issues and their "Related:" comments, pausing
 //                                           --sleep ms (default 2500) between requests
 //   --limit N            create at most N issues in this invocation (a staged rollout)
 //   --only id[,id...]    restrict to these file ids

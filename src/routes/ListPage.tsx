@@ -1,6 +1,6 @@
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { KindChip, RowChips } from "../components/Chips";
+import { RowChips } from "../components/Chips";
 import { CommitAge } from "../components/CommitAge";
 import { TopBar } from "../components/TopBar";
 import { ConfidenceContext, effectiveState, showConfidence } from "../data/confidence";
@@ -248,12 +248,11 @@ const Row = memo(function Row({ row, search, showCollection, showConf }: { row: 
           {row.headline && <span className="headline">{row.headline}</span>}
           {!row.headline && row.n_status_issues > 0 && <span className="muted">status issue only</span>}
         </span>
-        <span className="counts">
-          {showConf && row.max_confidence !== null && <span title="highest confidence among the misformalizations">p ≤ {row.max_confidence.toFixed(2)}</span>}
-          {row.kinds.map((k) => (
-            <KindChip key={k} kind={k} />
-          ))}
-        </span>
+        {showConf && row.max_confidence !== null && (
+          <span className="counts">
+            <span title="highest confidence among the misformalizations">p ≤ {row.max_confidence.toFixed(2)}</span>
+          </span>
+        )}
       </div>
     </li>
   );

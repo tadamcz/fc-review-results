@@ -10,8 +10,8 @@ import { Findings, Reformulations, ReviewerNotes, StatusIssues, jumpToLine } fro
 import { TopBar } from "../components/TopBar";
 import { ConfidenceContext, effectiveState, showConfidence } from "../data/confidence";
 import { DEFAULT_STATE, applyFilters, defaultShow, neighbours, parseState } from "../data/filters";
-import { useFile, useIndex } from "../data/load";
-import type { FileEntry } from "../data/schema";
+import { useFile, useIndex, useUpstream } from "../data/load";
+import type { FileEntry, UpstreamRecord } from "../data/schema";
 
 export function FilePage() {
   const params = useParams();
@@ -24,6 +24,7 @@ export function FilePage() {
   const dflt = index.status === "ok" ? defaultShow(index.data.meta) : DEFAULT_STATE.show; // the list's default view, so ‹ › walk the same files
   const state = useMemo(() => parseState(search, dflt), [search, dflt]);
   const showConf = index.status === "ok" ? showConfidence(index.data.meta) : true;
+  const upstream = useUpstream(index.status === "ok" ? index.data.meta.upstream : null); // the run's upstream check, if any
   const ids = useMemo(
     () => (index.status === "ok" ? applyFilters(index.data.files, effectiveState(state, showConf)).map((r) => r.id) : []),
     [index, state, showConf],
@@ -66,7 +67,7 @@ export function FilePage() {
         {file.status === "error" && <p className="error">Could not load this file: {file.error}</p>}
         {file.status === "ok" && index.status === "ok" && (
           <ConfidenceContext.Provider value={showConf}>
-            <FileBody entry={file.data} search={searchStr} />
+            <FileBody entry={file.data} search={searchStr} upstream={upstream.status === "ok" ? (upstream.data.get(file.data.id) ?? null) : null} />
           </ConfidenceContext.Provider>
         )}
       </main>
@@ -74,7 +75,7 @@ export function FilePage() {
   );
 }
 
-function FileBody({ entry, search }: { entry: FileEntry; search: string }) {
+function FileBody({ entry, search, upstream }: { entry: FileEntry; search: string; upstream: UpstreamRecord | null }) {
   const misf = entry.review.findings.filter((f) => f.severity === "misformalization");
   const marks = useMemo(() => {
     const m: Record<number, string> = {};
@@ -104,7 +105,7 @@ function FileBody({ entry, search }: { entry: FileEntry; search: string }) {
         </a>{" "}
         · <span className="muted">module</span> <code>{entry.module}</code>
       </p>
-      <Summary entry={entry} misf={misf.length} />
+      <Summary entry={entry} misf={misf.length} upstream={upstream} />
 
       <Findings entry={entry} search={search} />
       <TrivialProofSection entry={entry} />
@@ -124,7 +125,21 @@ function FileBody({ entry, search }: { entry: FileEntry; search: string }) {
   );
 }
 
-function Summary({ entry, misf }: { entry: FileEntry; misf: number }) {
+// The strongest upstream item already covering this file's misformalizations, when the run's check found
+// one: a fix merged after the reviewed commit, else an open pull request, else an open issue. One link.
+function UpstreamLink({ rec }: { rec: UpstreamRecord }) {
+  const rank = (c: UpstreamRecord["covered_by"][number]) => (c.state === "merged" ? 0 : c.type === "pr" ? 1 : 2);
+  const best = [...rec.covered_by].sort((a, b) => rank(a) - rank(b))[0];
+  if (!best) return null;
+  const what = best.state === "merged" ? "fixed upstream" : best.type === "pr" ? "fix proposed upstream" : "reported upstream";
+  return (
+    <a className="chip upstream" href={best.url} target="_blank" rel="noopener noreferrer" title={`${best.type === "pr" ? "Pull request" : "Issue"} #${best.number}: ${best.title}`}>
+      {what}: #{best.number} ↗
+    </a>
+  );
+}
+
+function Summary({ entry, misf, upstream }: { entry: FileEntry; misf: number; upstream: UpstreamRecord | null }) {
   const r = entry.review;
   const parts: string[] = [];
   if (!r.submitted) parts.push("no review was submitted");
@@ -141,6 +156,12 @@ function Summary({ entry, misf }: { entry: FileEntry; misf: number }) {
     <div className={`status-line`}>
       <div className={`status ${misf ? "warn" : ""}`}>
         <strong>{parts.join(" · ")}</strong> <TrivialProofChip trivialProof={entry.trivial_proof} /> <FixChip fix={entry.fix} />
+        {upstream && (
+          <>
+            {" "}
+            <UpstreamLink rec={upstream} />
+          </>
+        )}
       </div>
       {entry.sample.transcript_url && (
         <div className="actions">

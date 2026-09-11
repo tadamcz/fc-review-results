@@ -247,3 +247,25 @@ export const RunsFile = z.object({
   ),
 });
 export type RunsFile = z.infer<typeof RunsFile>;
+
+// One line of <sha>/upstream.jsonl: a flagged file whose misformalizations were already reported or
+// fixed upstream when checked, with the pull requests and issues judged to address the same defects.
+export const UpstreamRecord = z.object({
+  file: z.string(),
+  path: z.string(),
+  fc_commit: z.string(),
+  findings: z.array(z.object({ declaration: z.string(), kind: z.string() })),
+  covered_by: z.array(
+    z.object({
+      type: z.enum(["pr", "issue"]),
+      number: z.number(),
+      url: z.string(),
+      title: z.string(),
+      state: z.enum(["merged", "open"]),
+      merged_at: z.string().nullable().default(null),
+      note: z.string().default(""),
+    }),
+  ),
+  checked_at: z.string(),
+});
+export type UpstreamRecord = z.infer<typeof UpstreamRecord>;

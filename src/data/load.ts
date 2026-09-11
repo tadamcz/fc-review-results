@@ -5,7 +5,7 @@
 // field existed (e.g. `trivial_proof`) render.
 import { useEffect, useState } from "react";
 import type { z } from "zod";
-import { FileEntry, IndexFile, RunsFile } from "./schema";
+import { FileEntry, IndexFile, RunsFile, UpstreamRecord, type Meta } from "./schema";
 
 const cache = new Map<string, Promise<unknown>>();
 
@@ -27,6 +27,21 @@ export const loadIndex = () => fetchJson("index.json", IndexFile);
 export const loadFile = (id: string) => fetchJson(`files/${id.split("/").map(encodeURIComponent).join("/")}.json`, FileEntry);
 // the run list lives at the site root, one level up from this run's directory
 export const loadRuns = () => fetchJson("../runs.json", RunsFile);
+
+// <sha>/upstream.jsonl, one JSON line per file already reported or fixed upstream, keyed by file id
+export function loadUpstream(file: string): Promise<Map<string, UpstreamRecord>> {
+  let p = cache.get(`jsonl:${file}`) as Promise<Map<string, UpstreamRecord>> | undefined;
+  if (!p) {
+    p = fetch(file).then(async (r) => {
+      if (!r.ok) throw new Error(`${file}: HTTP ${r.status}`);
+      const recs = (await r.text()).split("\n").filter((l) => l.trim()).map((l) => UpstreamRecord.parse(JSON.parse(l)));
+      return new Map(recs.map((rec) => [rec.file, rec]));
+    });
+    p.catch(() => cache.delete(`jsonl:${file}`));
+    cache.set(`jsonl:${file}`, p);
+  }
+  return p;
+}
 
 export type Loaded<T> = { status: "loading" } | { status: "error"; error: string } | { status: "ok"; data: T };
 
@@ -63,6 +78,12 @@ export function useSwitchToLatest(): string | null {
   const runs = useRuns();
   if (index.status !== "ok" || runs.status !== "ok") return null;
   return runs.data.latest !== index.data.meta.fc_commit.slice(0, 10) ? runs.data.latest : null;
+}
+
+// The run's upstream check, when it has one; an empty map for runs without (so callers need no special case).
+export function useUpstream(upstream: Meta["upstream"] | null): Loaded<Map<string, UpstreamRecord>> {
+  const loaded = useLoaded(upstream ? () => loadUpstream(upstream.file) : null, `upstream:${upstream?.file ?? ""}`);
+  return upstream ? loaded : { status: "ok", data: new Map() };
 }
 
 export function useFile(id: string | undefined): Loaded<FileEntry> {

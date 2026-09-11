@@ -29,8 +29,9 @@ these files (Lean is highlighted in the browser):
 - `<sha>/upstream.jsonl` — optional, added after a run: one JSON line per
   flagged file whose misformalizations were already reported or fixed upstream
   when checked (the file, its findings, the covering pull requests and issues,
-  when it was checked); `meta.upstream` in `index.json` points at it and the
-  About page links it
+  when it was checked); `meta.upstream` in `index.json` points at it, the
+  About page links it, and each covered file's page links its strongest
+  covering item (a merged fix, else an open pull request, else an issue)
 
 ```sh
 uv run python -m autoformalization.review_site.export \

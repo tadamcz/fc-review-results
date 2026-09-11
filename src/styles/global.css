@@ -154,6 +154,7 @@ p { margin: 0.5rem 0; }
 .chip.fix-gaveup { border-color: var(--line-strong); background: var(--paper); color: var(--muted); }
 .chip.fix-none { border-color: var(--line-strong); background: var(--paper); color: var(--muted); }
 .chip.warn { border-color: var(--quest-line); background: var(--quest-bg); color: var(--quest); }
+.chip.upstream { border-color: var(--line-strong); background: var(--paper-alt); color: var(--ink); }
 
 /* file page header */
 .crumbs { font-size: 0.92rem; color: var(--muted); display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }

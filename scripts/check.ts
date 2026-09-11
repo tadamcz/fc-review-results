@@ -24,7 +24,7 @@ function walk(dir: string, prefix = ""): string[] {
 
 function checkRun(sha: string): string {
   const DATA = join(ROOT, sha);
-  const problem = (msg: string) => problems.push(`${sha.slice(0, 10)}: ${msg}`);
+  const problem = (msg: string) => problems.push(`${sha}: ${msg}`);
   const index = IndexFile.parse(readJson(join(DATA, "index.json")));
   const ids = index.files.map((r) => r.id).sort();
   if (new Set(ids).size !== ids.length) problem("duplicate ids in index.json");
@@ -88,9 +88,9 @@ function checkRun(sha: string): string {
   return `${ids.length} files, ${totals.misformalizations} misformalizations in ${totals.flagged}, ${fixes.compiles} compiling fixes`;
 }
 
-const summaries = runs.map((run) => `${run.sha.slice(0, 10)} (${run.started_at.slice(0, 10)}): ${checkRun(run.sha)}`);
+const summaries = runs.map((run) => `${run.sha} (${run.started_at.slice(0, 10)}): ${checkRun(run.sha)}`);
 if (problems.length) {
   console.error(`${problems.length} problem(s):\n  ${problems.slice(0, 40).join("\n  ")}`);
   process.exit(1);
 }
-console.log(`ok: ${runs.length} run(s), current ${currentRun(runs).sha.slice(0, 10)}\n  ${summaries.join("\n  ")}`);
+console.log(`ok: ${runs.length} run(s), current ${currentRun(runs).sha}\n  ${summaries.join("\n  ")}`);

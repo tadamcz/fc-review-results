@@ -1,13 +1,16 @@
 // The data tree holds one run per reviewed formal-conjectures commit:
-// data/<fc sha>/index.json and data/<fc sha>/files/**. The built site serves the
-// app once per run at <site>/<fc sha>/ next to that run's data, and the bare
+// data/<sha>/index.json and data/<sha>/files/**, where <sha> is the first ten
+// characters of the commit (as the pages show it). The built site serves the
+// app once per run at <site>/<sha>/ next to that run's data, and the bare
 // <site>/ redirects to the current run, the one whose review started last.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const DATA = join(dirname(fileURLToPath(import.meta.url)), "..", "data");
-export const SHA = /^[0-9a-f]{40}$/;
+export const SHORT = 10;
+export const SHA = /^[0-9a-f]{10}$/;
+export const shortSha = (commit: string) => commit.slice(0, SHORT);
 
 export type Run = { sha: string; started_at: string };
 
@@ -16,12 +19,12 @@ export function listRuns(): Run[] {
   const runs: Run[] = [];
   for (const name of readdirSync(DATA)) {
     if (name.startsWith(".")) continue; // .DS_Store
-    if (!statSync(join(DATA, name)).isDirectory()) throw new Error(`data/${name}: runs live in data/<fc sha>/`);
-    if (!SHA.test(name)) throw new Error(`data/${name}/: not a full commit sha`);
+    if (!statSync(join(DATA, name)).isDirectory()) throw new Error(`data/${name}: runs live in data/<short fc sha>/`);
+    if (!SHA.test(name)) throw new Error(`data/${name}/: not a ${SHORT}-character commit sha`);
     const path = join(DATA, name, "index.json");
     if (!existsSync(path)) throw new Error(`data/${name}/: no index.json`);
     const meta = JSON.parse(readFileSync(path, "utf8")).meta;
-    if (meta.fc_commit !== name) throw new Error(`data/${name}/: meta.fc_commit is ${meta.fc_commit}`);
+    if (typeof meta.fc_commit !== "string" || shortSha(meta.fc_commit) !== name) throw new Error(`data/${name}/: meta.fc_commit is ${meta.fc_commit}`);
     if (typeof meta.started_at !== "string" || Number.isNaN(Date.parse(meta.started_at))) throw new Error(`data/${name}/: bad meta.started_at`);
     runs.push({ sha: name, started_at: meta.started_at });
   }

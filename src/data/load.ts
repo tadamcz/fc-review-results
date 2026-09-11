@@ -5,7 +5,7 @@
 // field existed (e.g. `trivial_proof`) render.
 import { useEffect, useState } from "react";
 import type { z } from "zod";
-import { FileEntry, IndexFile } from "./schema";
+import { FileEntry, IndexFile, RunsFile } from "./schema";
 
 const cache = new Map<string, Promise<unknown>>();
 
@@ -25,6 +25,8 @@ function fetchJson<S extends z.ZodType>(rel: string, schema: S): Promise<z.outpu
 export const loadIndex = () => fetchJson("index.json", IndexFile);
 // ids carry slashes (ErdosProblems/1): each segment is encoded, the slashes stay
 export const loadFile = (id: string) => fetchJson(`files/${id.split("/").map(encodeURIComponent).join("/")}.json`, FileEntry);
+// the run list lives at the site root, one level up from this run's directory
+export const loadRuns = () => fetchJson("../runs.json", RunsFile);
 
 export type Loaded<T> = { status: "loading" } | { status: "error"; error: string } | { status: "ok"; data: T };
 
@@ -48,6 +50,10 @@ export function useLoaded<T>(loader: (() => Promise<T>) | null, key: string): Lo
 
 export function useIndex(): Loaded<IndexFile> {
   return useLoaded(loadIndex, "index");
+}
+
+export function useRuns(): Loaded<RunsFile> {
+  return useLoaded(loadRuns, "runs");
 }
 
 export function useFile(id: string | undefined): Loaded<FileEntry> {

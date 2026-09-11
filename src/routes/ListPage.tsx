@@ -1,6 +1,7 @@
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { KindChip, RowChips } from "../components/Chips";
+import { CommitAge } from "../components/CommitAge";
 import { TopBar } from "../components/TopBar";
 import { ConfidenceContext, effectiveState, showConfidence } from "../data/confidence";
 import { CONF_STEPS, DEFAULT_STATE, SHOW_LABELS, applyFilters, defaultShow, hasFilters, misfFiltersApply, parseState, plural, serializeState, type ListState, type Show, type Sort } from "../data/filters";
@@ -74,8 +75,8 @@ export function ListPage() {
         {t.files} files of formal-conjectures at{" "}
         <a href={meta.fc_tree_url} target="_blank" rel="noopener noreferrer">
           <code>{meta.fc_commit.slice(0, 10)}</code>
-        </a>{" "}
-        reviewed · {plural(t.misformalizations, "misformalization")} reported in {plural(t.flagged, "file")} ·{" "}
+        </a>
+        <CommitAge date={meta.fc_commit_date} prefix="committed " /> reviewed · {plural(t.misformalizations, "misformalization")} reported in {plural(t.flagged, "file")} ·{" "}
         {meta.trivial_proof.attempted ? <>{meta.trivial_proof.compiles ?? 0} with a compiling trivial proof · </> : null}
         {meta.fix.compiles ?? 0} with a compiling fix · {plural(t.status_issues, "status issue")} · <Link to="/about">about this audit</Link>
       </p>

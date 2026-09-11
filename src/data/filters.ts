@@ -139,6 +139,18 @@ export function formatDate(iso: string | null): string {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 }
 
+// "4 days ago" / "yesterday" / "2 months ago" for a commit date, worked out when rendered
+// (not at export time) so it stays right as the page ages.
+export function relativeDate(iso: string, now = Date.now()): string {
+  const days = Math.round((now - Date.parse(iso)) / 86_400_000);
+  // days read better as "today"/"yesterday"; a month or more stays numeric, so a 45-day-old
+  // commit is "1 month ago" rather than the vaguer "last month"
+  if (Math.abs(days) < 30) return new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(-days, "day");
+  const rtf = new Intl.RelativeTimeFormat("en", { numeric: "always" });
+  if (Math.abs(days) < 365) return rtf.format(-Math.round(days / 30.44), "month");
+  return rtf.format(-Math.round(days / 365.25), "year");
+}
+
 export function plural(n: number, noun: string): string {
   return `${n} ${n === 1 ? noun : noun + "s"}`;
 }

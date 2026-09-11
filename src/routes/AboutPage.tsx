@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "react-router";
+import { CommitAge } from "../components/CommitAge";
 import { TopBar } from "../components/TopBar";
 import { showConfidence } from "../data/confidence";
 import { formatDate, money, plural } from "../data/filters";
@@ -47,6 +48,7 @@ export function AboutPage() {
               <a href={m.fc_tree_url} target="_blank" rel="noopener noreferrer">
                 <code>{m.fc_commit.slice(0, 10)}</code>
               </a>
+              <CommitAge date={m.fc_commit_date} />
               .
               {m.note && (
                 <>
@@ -77,6 +79,7 @@ export function AboutPage() {
               <a href={m.fc_tree_url} target="_blank" rel="noopener noreferrer">
                 <code>{m.fc_commit.slice(0, 10)}</code>
               </a>
+              <CommitAge date={m.fc_commit_date} />
               . Every one of its {t.files}{" "}
               {library ? (
                 <>

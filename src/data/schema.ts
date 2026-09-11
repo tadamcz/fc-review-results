@@ -113,6 +113,7 @@ export const Meta = z.object({
   fc_commit: z.string(),
   fc_repo_url: z.string(),
   fc_tree_url: z.string(),
+  fc_commit_date: z.string().nullable().default(null), // committer date of the reviewed commit; null before it was recorded
   cost_usd: z.number(),
   totals: z.record(z.string(), z.number()),
   trivial_proof: z.record(z.string(), z.number()).default({}),
@@ -233,3 +234,13 @@ export function kindLabel(kind: string): string {
 export function runScope(meta: Meta): { subset: boolean; library: boolean } {
   return { subset: Boolean(meta.task_args.files) || Boolean(meta.task_args.collections), library: "ForMathlib" in meta.collections };
 }
+
+// <site>/runs.json, written at build from the data tree (scripts/runs.ts): where a run stands among the runs.
+// `latest` is the latest run over the whole tree; runs over a selection of files never are.
+export const RunsFile = z.object({
+  latest: z.string(),
+  runs: z.array(
+    z.object({ sha: z.string(), fc_commit: z.string(), fc_commit_date: z.string().nullable(), started_at: z.string(), files: z.number(), subset: z.boolean() }),
+  ),
+});
+export type RunsFile = z.infer<typeof RunsFile>;

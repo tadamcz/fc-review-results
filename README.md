@@ -46,8 +46,12 @@ runs are added. The bare `<site>/` is a small page that redirects to `84063d6942
 from before runs were versioned, carrying the hash route over: that run's links
 (`<site>/#/f/...`) are posted around GitHub and must keep resolving to the
 findings they were made for, so the target is fixed for good (`BARE_URL_RUN` in
-`scripts/runs.ts`). Newer runs are reached only through their own
-`<site>/<sha>/`. The dev and preview servers serve the same layout.
+`scripts/runs.ts`). `<site>/latest/` redirects the same way to the latest full
+run — the newest run over the whole tree; a run over a selection of files, such
+as a pull-request review, is never "latest" — and `<site>/runs.json` lists the
+runs, which is how a page that is not the latest full run shows a "switch to
+latest run" link. Commit shas on the pages carry the commit's age, worked out
+when rendered. The dev and preview servers serve the same layout.
 
 ## Local development
 

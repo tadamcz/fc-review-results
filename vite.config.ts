@@ -3,16 +3,19 @@ import { join } from "node:path";
 import type { Connect } from "vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin, type ResolvedConfig } from "vite";
-import { SHA, bareUrlRun, listRuns, redirectHtml } from "./scripts/runs";
+import { SHA, bareUrlRun, latestRun, listRuns, redirectHtml, runsJson } from "./scripts/runs";
 
-// One app, served once per run at /<fc sha>/ beside that run's data (which it fetches
-// with relative URLs), and a redirect page at / pointing at the run the unversioned links refer to (BARE_URL_RUN). The dev
-// and preview servers mirror the deployed layout (GitHub Pages sends /<dir> to /<dir>/).
+// One app, served once per run at /<fc sha>/ beside that run's data (which it fetches with
+// relative URLs); a redirect page at / pointing at the run the unversioned links refer to
+// (BARE_URL_RUN) and one at /latest/ pointing at the latest full run; and /runs.json, the run
+// list the app reads (as ../runs.json) to offer "switch to latest run". The dev and preview
+// servers mirror the deployed layout (GitHub Pages sends /<dir> to /<dir>/).
 function runs(): Plugin {
   let config: ResolvedConfig;
   const slash: Connect.NextHandleFunction = (req, res, next) => {
     const url = new URL(req.url ?? "/", "http://localhost");
-    if (SHA.test(url.pathname.slice(1))) {
+    const dir = url.pathname.slice(1);
+    if (SHA.test(dir) || dir === "latest") {
       res.statusCode = 301;
       res.setHeader("Location", `${url.pathname}/${url.search}`);
       res.end();
@@ -30,7 +33,17 @@ function runs(): Plugin {
         const url = new URL(req.url ?? "/", "http://localhost");
         if (url.pathname === "/" || url.pathname === "/index.html") {
           res.setHeader("Content-Type", "text/html; charset=utf-8");
-          res.end(redirectHtml(bareUrlRun().sha));
+          res.end(redirectHtml(`./${bareUrlRun().sha}/`));
+          return;
+        }
+        if (url.pathname === "/latest/" || url.pathname === "/latest/index.html") {
+          res.setHeader("Content-Type", "text/html; charset=utf-8");
+          res.end(redirectHtml(`../${latestRun().sha}/`));
+          return;
+        }
+        if (url.pathname === "/runs.json") {
+          res.setHeader("Content-Type", "application/json; charset=utf-8");
+          res.end(runsJson());
           return;
         }
         // /<sha>/ falls through to the SPA fallback and /<sha>/index.json, files/** to the public dir
@@ -50,7 +63,10 @@ function runs(): Plugin {
         cpSync(join(out, config.build.assetsDir), join(dir, config.build.assetsDir), { recursive: true });
       }
       rmSync(join(out, config.build.assetsDir), { recursive: true });
-      writeFileSync(join(out, "index.html"), redirectHtml(bareUrlRun().sha));
+      writeFileSync(join(out, "index.html"), redirectHtml(`./${bareUrlRun().sha}/`));
+      mkdirSync(join(out, "latest"), { recursive: true });
+      writeFileSync(join(out, "latest", "index.html"), redirectHtml(`../${latestRun().sha}/`));
+      writeFileSync(join(out, "runs.json"), runsJson());
     },
   };
 }

@@ -118,6 +118,11 @@ export const Meta = z.object({
   trivial_proof: z.record(z.string(), z.number()).default({}),
   fix: z.record(z.string(), z.number()),
   collections: z.record(z.string(), CollectionMeta),
+  // the example sets shipped into the sandbox, as the reviewer saw them; null in data exported before they were recorded
+  n_past_examples: z.number().nullable().default(null),
+  n_counter_examples: z.number().nullable().default(null),
+  // one human-written sentence about the run's scope (a pull-request review, say), shown on the list and About pages
+  note: z.object({ text: z.string(), url: z.string().nullable().default(null) }).nullable().default(null),
   generated_at: z.string(),
 });
 export type Meta = z.infer<typeof Meta>;
@@ -221,4 +226,10 @@ export const KIND_LABELS: Record<string, string> = {
 
 export function kindLabel(kind: string): string {
   return KIND_LABELS[kind] ?? kind.replace(/_/g, " ");
+}
+
+// What a run covered: a named selection of files (task args files/collections; the log records unset
+// args as null) rather than the whole tree, and whether the FormalConjecturesForMathlib/ files were in it.
+export function runScope(meta: Meta): { subset: boolean; library: boolean } {
+  return { subset: Boolean(meta.task_args.files) || Boolean(meta.task_args.collections), library: "ForMathlib" in meta.collections };
 }

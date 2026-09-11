@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import { KindChip, RowChips } from "../components/Chips";
 import { TopBar } from "../components/TopBar";
 import { ConfidenceContext, effectiveState, showConfidence } from "../data/confidence";
-import { CONF_STEPS, DEFAULT_STATE, SHOW_LABELS, applyFilters, hasFilters, misfFiltersApply, parseState, serializeState, type ListState, type Show, type Sort } from "../data/filters";
+import { CONF_STEPS, DEFAULT_STATE, SHOW_LABELS, applyFilters, defaultShow, hasFilters, misfFiltersApply, parseState, plural, serializeState, type ListState, type Show, type Sort } from "../data/filters";
 import { useIndex } from "../data/load";
 import { kindLabel, type IndexRow, type Meta } from "../data/schema";
 
@@ -12,14 +12,15 @@ const KINDS = ["wrong_statement", "wrong_definition", "vacuous_or_trivial"];
 export function ListPage() {
   const index = useIndex();
   const [params, setParams] = useSearchParams();
-  const state = useMemo(() => parseState(params), [params]);
+  const dflt = index.status === "ok" ? defaultShow(index.data.meta) : DEFAULT_STATE.show;
+  const state = useMemo(() => parseState(params, dflt), [params, dflt]);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const update = useCallback(
     (patch: Partial<ListState>) => {
-      setParams((prev) => serializeState({ ...parseState(prev), ...patch }), { replace: true });
+      setParams((prev) => serializeState({ ...parseState(prev, dflt), ...patch }, dflt), { replace: true });
     },
-    [setParams],
+    [setParams, dflt],
   );
 
   // the search box keeps its own immediate value; the URL follows with a short delay
@@ -74,10 +75,24 @@ export function ListPage() {
         <a href={meta.fc_tree_url} target="_blank" rel="noopener noreferrer">
           <code>{meta.fc_commit.slice(0, 10)}</code>
         </a>{" "}
-        reviewed · {t.misformalizations} misformalizations reported in {t.flagged} files ·{" "}
+        reviewed · {plural(t.misformalizations, "misformalization")} reported in {plural(t.flagged, "file")} ·{" "}
         {meta.trivial_proof.attempted ? <>{meta.trivial_proof.compiles ?? 0} with a compiling trivial proof · </> : null}
-        {meta.fix.compiles ?? 0} with a compiling fix · {t.status_issues} status issues · <Link to="/about">about this audit</Link>
+        {meta.fix.compiles ?? 0} with a compiling fix · {plural(t.status_issues, "status issue")} · <Link to="/about">about this audit</Link>
       </p>
+      {meta.note && (
+        <p className="count-line">
+          {meta.note.text}
+          {meta.note.url && (
+            <>
+              {" "}
+              ·{" "}
+              <a href={meta.note.url} target="_blank" rel="noopener noreferrer">
+                {meta.note.url.replace(/^https?:\/\//, "")}
+              </a>
+            </>
+          )}
+        </p>
+      )}
       <div className="list-layout">
         <aside className="list-side">
           <CollectionSidebar meta={meta} selected={state.collection} onSelect={(c) => update({ collection: c })} />
@@ -104,7 +119,7 @@ export function ListPage() {
             </label>
             <span className="result-count muted">{visible.length === files.length ? `${files.length} files` : `${visible.length} of ${files.length} files`}</span>
           </div>
-          <Filters state={state} onChange={update} showConf={showConf} />
+          <Filters state={state} onChange={update} showConf={showConf} dflt={dflt} />
           {visible.length === 0 && <p className="muted empty">No files match.</p>}
           <ol className="rows">
             {visible.map((r) => (
@@ -118,7 +133,7 @@ export function ListPage() {
   );
 }
 
-function Filters({ state, onChange, showConf }: { state: ListState; onChange: (patch: Partial<ListState>) => void; showConf: boolean }) {
+function Filters({ state, onChange, showConf, dflt }: { state: ListState; onChange: (patch: Partial<ListState>) => void; showConf: boolean; dflt: Show }) {
   const misf = misfFiltersApply(state.show);
   const inert = misf ? undefined : "Applies to misformalizations; not to this view";
   return (
@@ -157,8 +172,8 @@ function Filters({ state, onChange, showConf }: { state: ListState; onChange: (p
         </select>
       </label>
       )}
-      {hasFilters(effectiveState(state, showConf)) && (
-        <button className="clear" onClick={() => onChange({ show: DEFAULT_STATE.show, kind: null, confMin: null })}>
+      {hasFilters(effectiveState(state, showConf), dflt) && (
+        <button className="clear" onClick={() => onChange({ show: dflt, kind: null, confMin: null })}>
           Clear
         </button>
       )}

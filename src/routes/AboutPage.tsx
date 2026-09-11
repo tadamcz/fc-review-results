@@ -2,8 +2,9 @@ import { useEffect } from "react";
 import { Link } from "react-router";
 import { TopBar } from "../components/TopBar";
 import { showConfidence } from "../data/confidence";
-import { formatDate, money } from "../data/filters";
+import { formatDate, money, plural } from "../data/filters";
 import { useIndex } from "../data/load";
+import { runScope } from "../data/schema";
 import { orderedCollections } from "./ListPage";
 
 const REPO_URL = "https://github.com/tadamcz/fc-review-results";
@@ -27,23 +28,69 @@ export function AboutPage() {
   const fixes = m.fix;
   const trivialProofs = m.trivial_proof;
   const hasTrivialProofs = (trivialProofs.attempted ?? 0) > 0; // the phase did not exist for earlier runs
+  const { subset, library } = runScope(m);
+  const trivialProofPhase = hasTrivialProofs || m.task_args.trivial_proof === true; // the phase existed for this run
+  const noteLink = m.note?.url ? m.note.url.replace(/^https?:\/\//, "") : null;
   return (
     <>
       <TopBar />
       <main className="page narrow about">
         <h1>About</h1>
         <p>
-          This site shows the results of an automated audit of{" "}
-          <a href={m.fc_repo_url} target="_blank" rel="noopener noreferrer">
-            google-deepmind/formal-conjectures
-          </a>{" "}
-          at commit{" "}
-          <a href={m.fc_tree_url} target="_blank" rel="noopener noreferrer">
-            <code>{m.fc_commit.slice(0, 10)}</code>
-          </a>
-          . Every one of its {t.files} Lean files — the problem statements under <code>FormalConjectures/</code> and the reusable definitions under{" "}
-          <code>FormalConjecturesForMathlib/</code> — was reviewed by a language model against the source it cites, looking for <em>misformalizations</em>: places where a Lean
-          declaration does not state the mathematical claim its source poses.
+          {subset ? (
+            <>
+              This page shows the results of an automated review of {t.files} Lean files of{" "}
+              <a href={m.fc_repo_url} target="_blank" rel="noopener noreferrer">
+                google-deepmind/formal-conjectures
+              </a>{" "}
+              at commit{" "}
+              <a href={m.fc_tree_url} target="_blank" rel="noopener noreferrer">
+                <code>{m.fc_commit.slice(0, 10)}</code>
+              </a>
+              .
+              {m.note && (
+                <>
+                  {" "}
+                  {m.note.text}
+                  {m.note.url && (
+                    <>
+                      {" "}
+                      (
+                      <a href={m.note.url} target="_blank" rel="noopener noreferrer">
+                        {noteLink}
+                      </a>
+                      )
+                    </>
+                  )}
+                </>
+              )}{" "}
+              Each file was reviewed by a language model against the source it cites, looking for <em>misformalizations</em>: places where a Lean declaration does not state
+              the mathematical claim its source poses.
+            </>
+          ) : (
+            <>
+              This site shows the results of an automated audit of{" "}
+              <a href={m.fc_repo_url} target="_blank" rel="noopener noreferrer">
+                google-deepmind/formal-conjectures
+              </a>{" "}
+              at commit{" "}
+              <a href={m.fc_tree_url} target="_blank" rel="noopener noreferrer">
+                <code>{m.fc_commit.slice(0, 10)}</code>
+              </a>
+              . Every one of its {t.files}{" "}
+              {library ? (
+                <>
+                  Lean files — the problem statements under <code>FormalConjectures/</code> and the reusable definitions under <code>FormalConjecturesForMathlib/</code> —
+                </>
+              ) : (
+                <>
+                  problem files under <code>FormalConjectures/</code>
+                </>
+              )}{" "}
+              was reviewed by a language model against the source it cites, looking for <em>misformalizations</em>: places where a Lean declaration does not state the
+              mathematical claim its source poses.
+            </>
+          )}
         </p>
         <p>
           The findings are the model's, unreviewed by a human. Each comes with the source evidence it relied on and usually a Lean experiment
@@ -60,9 +107,15 @@ export function AboutPage() {
           {m.reasoning_effort ? ` at reasoning effort ${m.reasoning_effort}` : ""}, with a budget of $30 and six hours of working time per file and no limit on the number of
           steps. It was asked to read the cited source (Wikipedia, erdosproblems.com, arXiv, OEIS, papers), read every non-standard definition the statement uses, work through the
           repository's own <code>STATEMENTS.md</code> review checklist, and test boundary cases with <code>#eval</code>, <code>decide</code> and small <code>example</code> proofs.
-          The sandbox also held the repository's own history of merged fixes labelled <code>misformalization</code> ({t.files ? "285 pull requests" : ""}) as worked examples,
-          minus any fix to the file under review. The reviewer was told not to consult the formal-conjectures GitHub repository itself, so that its findings are independent of the
-          issue tracker.
+          The sandbox also held the repository's own history of merged fixes labelled <code>misformalization</code>
+          {m.n_past_examples ? ` (${m.n_past_examples} pull requests)` : ""} as worked examples, minus any fix to the file under review
+          {m.n_counter_examples ? (
+            <>
+              , and {m.n_counter_examples} hand-written counter-examples: cases raised as misformalizations and judged not to be, each with the verdict a reviewer should have
+              reported instead
+            </>
+          ) : null}
+          . The reviewer was told not to consult the formal-conjectures GitHub repository itself, so that its findings are independent of the issue tracker.
         </p>
 
         <h2>What is and is not a misformalization here</h2>
@@ -85,7 +138,7 @@ export function AboutPage() {
           </li>
         </ul>
 
-        {hasTrivialProofs && (
+        {trivialProofPhase && (
           <>
             <h2>Trivial proofs</h2>
             <p>
@@ -93,7 +146,14 @@ export function AboutPage() {
               that proves or refutes the statements as the file states them in a few lines — a proof of a supposedly open statement that the defect makes trivial, a
               disproof by counterexample, or a computation on which a definition and the intended notion disagree — something a maintainer can take in at a glance without
               reading the review. It could bail out when no defect admitted a short proof. The harness compiled each file itself (no errors, no <code>sorry</code>); the
-              file pages show it. Of {trivialProofs.attempted} attempts, {trivialProofs.compiles ?? 0} produced a compiling file and {trivialProofs.gave_up ?? 0} bailed out.
+              file pages show it.{" "}
+              {trivialProofs.attempted ? (
+                <>
+                  Of {plural(trivialProofs.attempted, "attempt")}, {trivialProofs.compiles ?? 0} produced a compiling file and {trivialProofs.gave_up ?? 0} bailed out.
+                </>
+              ) : (
+                <>No review reported misformalizations, so the phase never ran.</>
+              )}
             </p>
           </>
         )}
@@ -102,8 +162,15 @@ export function AboutPage() {
         <p>
           When a review reported misformalizations, the same agent was then asked to correct them by editing the file in place, keeping docstrings and attributes consistent
           and leaving everything else alone, and to iterate until the file compiled. It could also bail out when a fix was too hard. The harness recorded the file before and
-          after and ran its own compile check; the file pages show the edit as a diff. Of {fixes.attempted ?? 0} attempts, {fixes.compiles ?? 0} produced a compiling edit and{" "}
-          {fixes.gave_up ?? 0} bailed out. These edits are proposals, not reviewed patches.
+          after and ran its own compile check; the file pages show the edit as a diff.{" "}
+          {fixes.attempted ? (
+            <>
+              Of {plural(fixes.attempted, "attempt")}, {fixes.compiles ?? 0} produced a compiling edit and {fixes.gave_up ?? 0} bailed out. These edits are proposals, not
+              reviewed patches.
+            </>
+          ) : (
+            <>No review reported misformalizations, so no fix was attempted.</>
+          )}
         </p>
 
         <h2>Numbers</h2>
@@ -112,8 +179,8 @@ export function AboutPage() {
             {t.files} files reviewed, {t.submitted} with a submitted review.
           </li>
           <li>
-            {t.misformalizations} misformalizations reported in {t.flagged} files; {t.questionable} questionable and {t.minor} minor findings; {t.status_issues} status issues;{" "}
-            {t.reformulations} reformulations judged equivalent.
+            {plural(t.misformalizations, "misformalization")} reported in {plural(t.flagged, "file")}; {t.questionable} questionable and {t.minor} minor{" "}
+            {t.questionable + t.minor === 1 ? "finding" : "findings"}; {plural(t.status_issues, "status issue")}; {plural(t.reformulations, "reformulation")} judged equivalent.
           </li>
         </ul>
         <table className="claims-table">

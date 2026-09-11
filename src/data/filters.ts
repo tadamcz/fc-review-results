@@ -1,5 +1,5 @@
 // URL query <-> list state, search, sort, and neighbours for ‹ › on the file page.
-import { trivialProofCompiles, type IndexRow } from "./schema";
+import { trivialProofCompiles, type IndexRow, type Meta } from "./schema";
 
 export type Show = "flagged" | "all" | "trivial_proof" | "fixed" | "gave_up" | "status" | "clean" | "unsubmitted";
 export type Sort = "misf" | "confidence" | "id";
@@ -26,6 +26,13 @@ export const SHOW_LABELS: Record<Show, string> = {
 
 export const DEFAULT_STATE: ListState = { q: "", collection: null, show: "flagged", kind: null, confMin: null, sort: "misf" };
 
+// The view a run opens on: its flagged files, or every file when it flagged none (a review of a
+// pull request that found nothing would otherwise open on an empty list). The default is what
+// the URL leaves out, so parse/serialize/hasFilters take it.
+export function defaultShow(meta: Meta): Show {
+  return (meta.totals.flagged ?? 0) > 0 ? "flagged" : "all";
+}
+
 export const CONF_STEPS = [0.5, 0.7, 0.8, 0.9, 0.95, 0.99];
 
 // `kinds` and `max_confidence` describe a file's misformalization-severity
@@ -44,32 +51,32 @@ function num(v: string | null): number | null {
 const SHOWS = Object.keys(SHOW_LABELS) as Show[];
 const SORTS: Sort[] = ["misf", "confidence", "id"];
 
-export function parseState(params: URLSearchParams): ListState {
+export function parseState(params: URLSearchParams, dflt: Show = DEFAULT_STATE.show): ListState {
   const show = params.get("show");
   const sort = params.get("sort");
   return {
     q: params.get("q") ?? "",
     collection: params.get("c"),
-    show: SHOWS.includes(show as Show) ? (show as Show) : DEFAULT_STATE.show,
+    show: SHOWS.includes(show as Show) ? (show as Show) : dflt,
     kind: params.get("kind"),
     confMin: num(params.get("cmin")),
     sort: SORTS.includes(sort as Sort) ? (sort as Sort) : DEFAULT_STATE.sort,
   };
 }
 
-export function serializeState(state: ListState): URLSearchParams {
+export function serializeState(state: ListState, dflt: Show = DEFAULT_STATE.show): URLSearchParams {
   const p = new URLSearchParams();
   if (state.q) p.set("q", state.q);
   if (state.collection) p.set("c", state.collection);
-  if (state.show !== DEFAULT_STATE.show) p.set("show", state.show);
+  if (state.show !== dflt) p.set("show", state.show);
   if (state.kind) p.set("kind", state.kind);
   if (state.confMin !== null) p.set("cmin", String(state.confMin));
   if (state.sort !== DEFAULT_STATE.sort) p.set("sort", state.sort);
   return p;
 }
 
-export function hasFilters(state: ListState): boolean {
-  return state.show !== DEFAULT_STATE.show || (misfFiltersApply(state.show) && (state.kind !== null || state.confMin !== null));
+export function hasFilters(state: ListState, dflt: Show = DEFAULT_STATE.show): boolean {
+  return state.show !== dflt || (misfFiltersApply(state.show) && (state.kind !== null || state.confMin !== null));
 }
 
 function matchesShow(r: IndexRow, show: Show): boolean {
@@ -130,6 +137,10 @@ export function formatDate(iso: string | null): string {
   if (!iso) return "";
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+}
+
+export function plural(n: number, noun: string): string {
+  return `${n} ${n === 1 ? noun : noun + "s"}`;
 }
 
 export function money(n: number): string {

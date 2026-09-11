@@ -9,7 +9,7 @@ import { Markdown } from "../components/Markdown";
 import { Findings, Reformulations, ReviewerNotes, StatusIssues, jumpToLine } from "../components/Review";
 import { TopBar } from "../components/TopBar";
 import { ConfidenceContext, effectiveState, showConfidence } from "../data/confidence";
-import { applyFilters, neighbours, parseState } from "../data/filters";
+import { DEFAULT_STATE, applyFilters, defaultShow, neighbours, parseState } from "../data/filters";
 import { useFile, useIndex } from "../data/load";
 import type { FileEntry } from "../data/schema";
 
@@ -21,7 +21,8 @@ export function FilePage() {
   const index = useIndex();
   const file = useFile(id);
 
-  const state = useMemo(() => parseState(search), [search]);
+  const dflt = index.status === "ok" ? defaultShow(index.data.meta) : DEFAULT_STATE.show; // the list's default view, so ‹ › walk the same files
+  const state = useMemo(() => parseState(search, dflt), [search, dflt]);
   const showConf = index.status === "ok" ? showConfidence(index.data.meta) : true;
   const ids = useMemo(
     () => (index.status === "ok" ? applyFilters(index.data.files, effectiveState(state, showConf)).map((r) => r.id) : []),

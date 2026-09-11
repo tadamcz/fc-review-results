@@ -3,7 +3,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { FileEntry, IndexFile, trivialProofCompiles } from "../src/data/schema";
-import { DATA as ROOT, currentRun, listRuns } from "./runs";
+import { DATA as ROOT, bareUrlRun, listRuns } from "./runs";
 
 const runs = listRuns();
 const problems: string[] = [];
@@ -109,4 +109,4 @@ if (problems.length) {
   console.error(`${problems.length} problem(s):\n  ${problems.slice(0, 40).join("\n  ")}`);
   process.exit(1);
 }
-console.log(`ok: ${runs.length} run(s), current ${currentRun(runs).sha}\n  ${summaries.join("\n  ")}`);
+console.log(`ok: ${runs.length} run(s), bare URL -> ${bareUrlRun(runs).sha}\n  ${summaries.join("\n  ")}`);

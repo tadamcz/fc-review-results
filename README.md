@@ -42,10 +42,12 @@ The app is built once and served once per run at `<site>/<sha>/`, beside that
 run's data, which it fetches with relative URLs (`scripts/runs.ts` and the
 `runs` plugin in `vite.config.ts` lay out `dist/`). File pages are
 `<site>/<sha>/#/f/<collection>/<stem>`, so links to a run stay valid when later
-runs are added. The bare `<site>/` is a small page that redirects to the
-current run — the one whose review started last — carrying the hash route over,
-so links from before runs were versioned (`<site>/#/f/...`) keep working. The
-dev and preview servers serve the same layout.
+runs are added. The bare `<site>/` is a small page that redirects to `84063d6942`, the run
+from before runs were versioned, carrying the hash route over: that run's links
+(`<site>/#/f/...`) are posted around GitHub and must keep resolving to the
+findings they were made for, so the target is fixed for good (`BARE_URL_RUN` in
+`scripts/runs.ts`). Newer runs are reached only through their own
+`<site>/<sha>/`. The dev and preview servers serve the same layout.
 
 ## Local development
 

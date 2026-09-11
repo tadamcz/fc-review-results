@@ -2,7 +2,9 @@
 // data/<sha>/index.json and data/<sha>/files/**, where <sha> is the first ten
 // characters of the commit (as the pages show it). The built site serves the
 // app once per run at <site>/<sha>/ next to that run's data, and the bare
-// <site>/ redirects to the current run, the one whose review started last.
+// <site>/ is a permanent alias of one run, BARE_URL_RUN: the first run's links
+// were <site>/#/f/<id> and are posted around GitHub, so they must keep
+// resolving to that run's findings. The alias never moves to a newer run.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,6 +13,11 @@ export const DATA = join(dirname(fileURLToPath(import.meta.url)), "..", "data");
 export const SHORT = 10;
 export const SHA = /^[0-9a-f]{10}$/;
 export const shortSha = (commit: string) => commit.slice(0, SHORT);
+
+// The run the bare <site>/ redirects to: the one that existed before runs were
+// versioned. Fixed for good — changing it would point every link made from that
+// run at another run's findings.
+export const BARE_URL_RUN = "84063d6942";
 
 export type Run = { sha: string; started_at: string };
 
@@ -32,8 +39,10 @@ export function listRuns(): Run[] {
   return runs.sort((a, b) => Date.parse(a.started_at) - Date.parse(b.started_at) || a.sha.localeCompare(b.sha));
 }
 
-export function currentRun(runs = listRuns()): Run {
-  return runs[runs.length - 1];
+export function bareUrlRun(runs = listRuns()): Run {
+  const run = runs.find((r) => r.sha === BARE_URL_RUN);
+  if (!run) throw new Error(`data/${BARE_URL_RUN}/ is missing, but the bare <site>/ redirects to it`);
+  return run;
 }
 
 // The page at the site root. Old links are <site>/#/f/<id>; the hash router's
@@ -53,7 +62,7 @@ export function redirectHtml(sha: string): string {
     <noscript><meta http-equiv="refresh" content="0; url=${target}" /></noscript>
   </head>
   <body>
-    <p>Redirecting to the <a href="${target}">current run</a>…</p>
+    <p>Redirecting to the <a href="${target}">audit</a>…</p>
   </body>
 </html>
 `;

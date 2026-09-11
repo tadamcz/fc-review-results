@@ -3,10 +3,10 @@ import { join } from "node:path";
 import type { Connect } from "vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin, type ResolvedConfig } from "vite";
-import { SHA, currentRun, listRuns, redirectHtml } from "./scripts/runs";
+import { SHA, bareUrlRun, listRuns, redirectHtml } from "./scripts/runs";
 
 // One app, served once per run at /<fc sha>/ beside that run's data (which it fetches
-// with relative URLs), and a redirect page at / pointing at the current run. The dev
+// with relative URLs), and a redirect page at / pointing at the run the unversioned links refer to (BARE_URL_RUN). The dev
 // and preview servers mirror the deployed layout (GitHub Pages sends /<dir> to /<dir>/).
 function runs(): Plugin {
   let config: ResolvedConfig;
@@ -30,7 +30,7 @@ function runs(): Plugin {
         const url = new URL(req.url ?? "/", "http://localhost");
         if (url.pathname === "/" || url.pathname === "/index.html") {
           res.setHeader("Content-Type", "text/html; charset=utf-8");
-          res.end(redirectHtml(currentRun().sha));
+          res.end(redirectHtml(bareUrlRun().sha));
           return;
         }
         // /<sha>/ falls through to the SPA fallback and /<sha>/index.json, files/** to the public dir
@@ -50,7 +50,7 @@ function runs(): Plugin {
         cpSync(join(out, config.build.assetsDir), join(dir, config.build.assetsDir), { recursive: true });
       }
       rmSync(join(out, config.build.assetsDir), { recursive: true });
-      writeFileSync(join(out, "index.html"), redirectHtml(currentRun().sha));
+      writeFileSync(join(out, "index.html"), redirectHtml(bareUrlRun().sha));
     },
   };
 }

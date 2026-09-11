@@ -124,6 +124,9 @@ export const Meta = z.object({
   n_counter_examples: z.number().nullable().default(null),
   // one human-written sentence about the run's scope (a pull-request review, say), shown on the list and About pages
   note: z.object({ text: z.string(), url: z.string().nullable().default(null) }).nullable().default(null),
+  // a later check of the flagged files against the repository: <sha>/upstream.jsonl lists the files whose
+  // misformalizations were already reported or fixed upstream (one line per file); null when not done
+  upstream: z.object({ file: z.string(), n_files: z.number(), n_findings: z.number(), checked_at: z.string() }).nullable().default(null),
   generated_at: z.string(),
 });
 export type Meta = z.infer<typeof Meta>;

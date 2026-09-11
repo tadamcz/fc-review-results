@@ -34,6 +34,26 @@ function checkRun(sha: string): string {
   const onDisk = walk(join(DATA, "files"));
   if (JSON.stringify(onDisk) !== JSON.stringify(ids)) problem(`files/**.json (${onDisk.length}) != index ids (${ids.length})`);
 
+  // the upstream check sidecar: one JSON line per file already reported or fixed upstream
+  const up = index.meta.upstream;
+  if (up) {
+    const path = join(DATA, up.file);
+    if (!existsSync(path)) problem(`meta.upstream names ${up.file}, which is missing`);
+    else {
+      const recs = readFileSync(path, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
+      const flagged = new Set(index.files.filter((r) => r.n_misformalizations > 0).map((r) => r.id));
+      if (recs.length !== up.n_files) problem(`${up.file}: ${recs.length} lines, meta.upstream.n_files ${up.n_files}`);
+      let nf = 0;
+      for (const r of recs) {
+        if (!flagged.has(r.file)) problem(`${up.file}: ${r.file} is not a flagged file of this run`);
+        if (!Array.isArray(r.covered_by) || !r.covered_by.length) problem(`${up.file}: ${r.file} has no covered_by`);
+        if (!Array.isArray(r.findings) || !r.findings.length) problem(`${up.file}: ${r.file} has no findings`);
+        nf += (r.findings ?? []).length;
+      }
+      if (nf !== up.n_findings) problem(`${up.file}: ${nf} findings, meta.upstream.n_findings ${up.n_findings}`);
+    }
+  }
+
   const totals = { files: 0, submitted: 0, flagged: 0, misformalizations: 0, questionable: 0, minor: 0, status_issues: 0, reformulations: 0 };
   const fixes = { attempted: 0, changed: 0, compiles: 0, gave_up: 0 };
   const trivialProofs = { attempted: 0, written: 0, compiles: 0, gave_up: 0 };

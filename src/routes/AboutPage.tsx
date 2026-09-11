@@ -227,6 +227,23 @@ export function AboutPage() {
           </li>
         </ul>
 
+        {m.upstream && (
+          <>
+            <h2>Already reported upstream</h2>
+            <p>
+              On {formatDate(m.upstream.checked_at)} the flagged files were checked against the repository: pull requests open or merged after the reviewed commit that
+              carry the <code>misformalization</code> label or reference an issue that does, matched by the files they change, and open issues with that label, matched by
+              the files they name. A language model then read each pull request's diff or issue's text against our findings on the file and judged whether it addresses
+              the same defect. {m.upstream.n_files} of the {t.flagged} flagged files, holding {m.upstream.n_findings} of the {t.misformalizations} misformalizations, were
+              already covered in full:{" "}
+              <a href={m.upstream.file} target="_blank" rel="noopener noreferrer">
+                {m.upstream.file}
+              </a>
+              , one JSON line per file with the pull requests and issues that cover it and a note on each. The other findings had no upstream report at that time.
+            </p>
+          </>
+        )}
+
         <h2>Data and code</h2>
         <p>
           The task, prompts and exporter live on the <a href={TASK_URL} target="_blank" rel="noopener noreferrer">fc-review branch</a> of epoch-research/autoformalization; this

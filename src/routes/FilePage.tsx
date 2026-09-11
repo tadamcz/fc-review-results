@@ -11,6 +11,7 @@ import { TopBar } from "../components/TopBar";
 import { ConfidenceContext, effectiveState, showConfidence } from "../data/confidence";
 import { DEFAULT_STATE, applyFilters, defaultShow, neighbours, parseState } from "../data/filters";
 import { useFile, useIndex, useUpstream } from "../data/load";
+import { summaryParts } from "../data/labels";
 import type { FileEntry, UpstreamRecord } from "../data/schema";
 
 export function FilePage() {
@@ -76,7 +77,6 @@ export function FilePage() {
 }
 
 function FileBody({ entry, search, upstream }: { entry: FileEntry; search: string; upstream: UpstreamRecord | null }) {
-  const misf = entry.review.findings.filter((f) => f.severity === "misformalization");
   const marks = useMemo(() => {
     const m: Record<number, string> = {};
     for (const r of entry.review.reformulations) if (r.line) m[r.line] = "reform";
@@ -105,7 +105,7 @@ function FileBody({ entry, search, upstream }: { entry: FileEntry; search: strin
         </a>{" "}
         · <span className="muted">module</span> <code>{entry.module}</code>
       </p>
-      <Summary entry={entry} misf={misf.length} upstream={upstream} />
+      <Summary entry={entry} upstream={upstream} />
 
       <Findings entry={entry} search={search} />
       <TrivialProofSection entry={entry} />
@@ -146,19 +146,9 @@ function UpstreamLink({ rec }: { rec: UpstreamRecord }) {
   );
 }
 
-function Summary({ entry, misf, upstream }: { entry: FileEntry; misf: number; upstream: UpstreamRecord | null }) {
-  const r = entry.review;
-  const parts: string[] = [];
-  if (!r.submitted) parts.push("no review was submitted");
-  else {
-    parts.push(`${misf} misformalization${misf === 1 ? "" : "s"}`);
-    const q = r.findings.filter((f) => f.severity === "questionable").length;
-    const m = r.findings.filter((f) => f.severity === "minor").length;
-    if (q) parts.push(`${q} questionable`);
-    if (m) parts.push(`${m} minor`);
-    if (r.status_issues.length) parts.push(`${r.status_issues.length} status issue${r.status_issues.length === 1 ? "" : "s"}`);
-    if (r.reformulations.length) parts.push(`${r.reformulations.length} equivalent reformulation${r.reformulations.length === 1 ? "" : "s"}`);
-  }
+function Summary({ entry, upstream }: { entry: FileEntry; upstream: UpstreamRecord | null }) {
+  const parts = summaryParts(entry);
+  const misf = entry.review.findings.filter((f) => f.severity === "misformalization").length;
   return (
     <div className={`status-line`}>
       <div className={`status ${misf ? "warn" : ""}`}>

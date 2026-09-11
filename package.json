@@ -10,7 +10,8 @@
     "dev": "vite",
     "build": "pnpm check && tsc --noEmit && vite build",
     "preview": "vite preview",
-    "check": "tsx scripts/check.ts"
+    "check": "tsx scripts/check.ts",
+    "issues": "tsx scripts/file-issues.ts"
   },
   "dependencies": {
     "diff": "9.0.0",

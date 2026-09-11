@@ -42,6 +42,26 @@ The exporter picks the directory from the run's `fc_commit`; adding a run is
 committing its directory. `pnpm check` requires the directory name to be the
 first ten characters of `meta.fc_commit`.
 
+## Filing issues
+
+`issues/<sha>/` holds what was filed on google-deepmind/formal-conjectures for a
+run: `drafts.jsonl` (one line per flagged file not already reported upstream:
+the issue title's gist, a one-sentence summary, and for files with an existing
+thread the "Related:" comment pointing at it; written by language-model agents
+from the findings, then reviewed) and `created.jsonl` (what `pnpm issues`
+created, so a re-run never files a file twice).
+
+```sh
+pnpm issues -- --run <sha>            # dry run: validate, check labels, write issues/<sha>/preview.md
+pnpm issues -- --run <sha> --create   # file them (--limit N, --only id,id, --repo owner/name, --sleep ms)
+```
+
+Each issue is titled `<file id>: <gist>`; its body is the summary, the file's
+page on the site, bullets mirroring the page's summary band and a provenance
+footnote; it carries the labels `misformalization`, `ai-audit` and
+`ai-audit-<sha>`, all of which must exist or the script stops before doing
+anything.
+
 ## URLs
 
 The app is built once and served once per run at `<site>/<sha>/`, beside that

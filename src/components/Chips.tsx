@@ -1,7 +1,10 @@
 // The small labels used on rows and file pages: severity, finding kind, trivial-proof and fix outcomes.
 import { useShowConfidence } from "../data/confidence";
+import { fixLabel, trivialProofLabel } from "../data/labels";
 import type { TrivialProofRow, FixRow, IndexRow, Severity } from "../data/schema";
 import { trivialProofCompiles, kindLabel } from "../data/schema";
+
+export { fixLabel, trivialProofLabel };
 
 export function SeverityChip({ severity }: { severity: Severity }) {
   return <span className={`chip sev-${severity}`}>{severity}</span>;
@@ -20,26 +23,9 @@ export function Confidence({ value }: { value: number }) {
   );
 }
 
-export function fixLabel(fix: FixRow): { text: string; cls: string } | null {
-  if (!fix.attempted) return null;
-  if (fix.gave_up) return { text: "fix: bailed out", cls: "fix-gaveup" };
-  if (fix.changed && fix.compile_ok) return { text: "fix compiles", cls: "fix-ok" };
-  if (fix.changed) return { text: "fix does not compile", cls: "fix-bad" };
-  return { text: "no edit", cls: "fix-none" };
-}
-
 export function FixChip({ fix }: { fix: FixRow }) {
   const l = fixLabel(fix);
   return l ? <span className={`chip ${l.cls}`}>{l.text}</span> : null;
-}
-
-export function trivialProofLabel(tp: TrivialProofRow): { text: string; cls: string } | null {
-  if (!tp.attempted) return null;
-  if (tp.gave_up) return { text: "trivial proof: bailed out", cls: "fix-gaveup" };
-  if (!tp.written) return { text: "no trivial-proof file", cls: "fix-none" };
-  if (trivialProofCompiles(tp)) return { text: "trivial proof compiles", cls: "fix-ok" };
-  if (tp.compile_ok) return { text: "trivial proof uses sorry", cls: "fix-bad" };
-  return { text: "trivial proof does not compile", cls: "fix-bad" };
 }
 
 export function TrivialProofChip({ trivialProof }: { trivialProof: TrivialProofRow }) {

@@ -1,18 +1,15 @@
-// Fetch + cache of the exporter's JSON. data/ is Vite's public directory, so
-// the committed files are served as-is at the site root.
+// Fetch + cache of the exporter's JSON. The app is served at <site>/<fc sha>/
+// beside that run's index.json and files/** (see scripts/runs.ts), so the paths
+// are relative to the document.
 import { useEffect, useState } from "react";
 import type { FileEntry, IndexFile } from "./schema";
 
 const cache = new Map<string, Promise<unknown>>();
 
-function url(rel: string): string {
-  return `${import.meta.env.BASE_URL}${rel}`;
-}
-
 function fetchJson<T>(rel: string): Promise<T> {
   let p = cache.get(rel);
   if (!p) {
-    p = fetch(url(rel)).then((r) => {
+    p = fetch(rel).then((r) => {
       if (!r.ok) throw new Error(`${rel}: HTTP ${r.status}`);
       return r.json();
     });

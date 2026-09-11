@@ -11,7 +11,7 @@ import { TopBar } from "../components/TopBar";
 import { ConfidenceContext, effectiveState, showConfidence } from "../data/confidence";
 import { DEFAULT_STATE, applyFilters, defaultShow, neighbours, parseState } from "../data/filters";
 import { useFile, useIndex, useIssues, useUpstream } from "../data/load";
-import { fixLabel, summaryParts, trivialProofLabel } from "../data/labels";
+import { summaryParts } from "../data/labels";
 import type { FileEntry, IssueRecord, UpstreamRecord } from "../data/schema";
 
 export function FilePage() {
@@ -164,23 +164,12 @@ function GitHubLink({ upstream, filed }: { upstream: UpstreamRecord | null; file
 function Summary({ entry, upstream, filed }: { entry: FileEntry; upstream: UpstreamRecord | null; filed: IssueRecord | null }) {
   const parts = summaryParts(entry);
   const misf = entry.review.findings.filter((f) => f.severity === "misformalization").length;
-  const outcomes = Boolean(fixLabel(entry.fix) || upstream || filed); // anything for the second line: what was done about the problems
+  // one line: the counts, then the chips in the list rows' order — trivial proof, fix, the GitHub link
   return (
     <div className={`status-line`}>
       <div className={`status ${misf ? "warn" : ""}`}>
-        <strong>{parts.join(" · ")}</strong>
-        {trivialProofLabel(entry.trivial_proof) && (
-          <>
-            {" "}
-            <TrivialProofChip trivialProof={entry.trivial_proof} />
-          </>
-        )}
-        {outcomes && (
-          <div className="status-fixes">
-            <FixChip fix={entry.fix} />
-            <GitHubLink upstream={upstream} filed={filed} />
-          </div>
-        )}
+        <strong>{parts.join(" · ")}</strong> <TrivialProofChip trivialProof={entry.trivial_proof} /> <FixChip fix={entry.fix} />{" "}
+        <GitHubLink upstream={upstream} filed={filed} />
       </div>
       {entry.sample.transcript_url && (
         <div className="actions">

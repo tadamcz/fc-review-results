@@ -2,7 +2,7 @@
 // beside that run's index.json and files/** (see scripts/runs.ts), so the paths
 // are relative to the document. The JSON goes through the zod schemas, as in
 // scripts/check.ts: the defaults there are what lets a run exported before a
-// field existed (e.g. `evidence`) render.
+// field existed (e.g. `trivial_proof`) render.
 import { useEffect, useState } from "react";
 import type { z } from "zod";
 import { FileEntry, IndexFile } from "./schema";

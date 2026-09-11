@@ -1,7 +1,7 @@
-// The small labels used on rows and file pages: severity, finding kind, evidence and fix outcomes.
+// The small labels used on rows and file pages: severity, finding kind, trivial-proof and fix outcomes.
 import { useShowConfidence } from "../data/confidence";
-import type { EvidenceRow, FixRow, IndexRow, Severity } from "../data/schema";
-import { evidenceCompiles, kindLabel } from "../data/schema";
+import type { TrivialProofRow, FixRow, IndexRow, Severity } from "../data/schema";
+import { trivialProofCompiles, kindLabel } from "../data/schema";
 
 export function SeverityChip({ severity }: { severity: Severity }) {
   return <span className={`chip sev-${severity}`}>{severity}</span>;
@@ -33,17 +33,17 @@ export function FixChip({ fix }: { fix: FixRow }) {
   return l ? <span className={`chip ${l.cls}`}>{l.text}</span> : null;
 }
 
-export function evidenceLabel(ev: EvidenceRow): { text: string; cls: string } | null {
-  if (!ev.attempted) return null;
-  if (ev.gave_up) return { text: "evidence: bailed out", cls: "fix-gaveup" };
-  if (!ev.written) return { text: "no evidence file", cls: "fix-none" };
-  if (evidenceCompiles(ev)) return { text: "Lean evidence", cls: "fix-ok" };
-  if (ev.compile_ok) return { text: "evidence uses sorry", cls: "fix-bad" };
-  return { text: "evidence does not compile", cls: "fix-bad" };
+export function trivialProofLabel(tp: TrivialProofRow): { text: string; cls: string } | null {
+  if (!tp.attempted) return null;
+  if (tp.gave_up) return { text: "trivial proof: bailed out", cls: "fix-gaveup" };
+  if (!tp.written) return { text: "no trivial-proof file", cls: "fix-none" };
+  if (trivialProofCompiles(tp)) return { text: "trivial proof compiles", cls: "fix-ok" };
+  if (tp.compile_ok) return { text: "trivial proof uses sorry", cls: "fix-bad" };
+  return { text: "trivial proof does not compile", cls: "fix-bad" };
 }
 
-export function EvidenceChip({ evidence }: { evidence: EvidenceRow }) {
-  const l = evidenceLabel(evidence);
+export function TrivialProofChip({ trivialProof }: { trivialProof: TrivialProofRow }) {
+  const l = trivialProofLabel(trivialProof);
   return l ? <span className={`chip ${l.cls}`}>{l.text}</span> : null;
 }
 
@@ -61,7 +61,7 @@ export function RowChips({ row }: { row: IndexRow }) {
         </span>
       )}
       {row.n_questionable > 0 && <span className="chip sev-questionable">{row.n_questionable} questionable</span>}
-      {evidenceCompiles(row.evidence) && <EvidenceChip evidence={row.evidence} />}
+      {trivialProofCompiles(row.trivial_proof) && <TrivialProofChip trivialProof={row.trivial_proof} />}
       <FixChip fix={row.fix} />
       {!row.submitted && <span className="chip warn">no review submitted</span>}
     </span>

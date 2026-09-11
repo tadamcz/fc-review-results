@@ -1,7 +1,7 @@
 // URL query <-> list state, search, sort, and neighbours for ‹ › on the file page.
-import { evidenceCompiles, type IndexRow } from "./schema";
+import { trivialProofCompiles, type IndexRow } from "./schema";
 
-export type Show = "flagged" | "all" | "evidence" | "fixed" | "gave_up" | "status" | "clean" | "unsubmitted";
+export type Show = "flagged" | "all" | "trivial_proof" | "fixed" | "gave_up" | "status" | "clean" | "unsubmitted";
 export type Sort = "misf" | "confidence" | "id";
 
 export interface ListState {
@@ -16,7 +16,7 @@ export interface ListState {
 export const SHOW_LABELS: Record<Show, string> = {
   flagged: "with misformalizations",
   all: "all files",
-  evidence: "with compiling Lean evidence",
+  trivial_proof: "with a compiling trivial proof",
   fixed: "with a compiling fix",
   gave_up: "fix bailed out",
   status: "with status issues",
@@ -32,7 +32,7 @@ export const CONF_STEPS = [0.5, 0.7, 0.8, 0.9, 0.95, 0.99];
 // findings, so the Kind and Confidence filters only mean something when the
 // shown set is about misformalizations; for the other views they are inert.
 export function misfFiltersApply(show: Show): boolean {
-  return show === "flagged" || show === "all" || show === "evidence" || show === "fixed" || show === "gave_up";
+  return show === "flagged" || show === "all" || show === "trivial_proof" || show === "fixed" || show === "gave_up";
 }
 
 function num(v: string | null): number | null {
@@ -78,8 +78,8 @@ function matchesShow(r: IndexRow, show: Show): boolean {
       return true;
     case "flagged":
       return r.n_misformalizations > 0;
-    case "evidence":
-      return evidenceCompiles(r.evidence);
+    case "trivial_proof":
+      return trivialProofCompiles(r.trivial_proof);
     case "fixed":
       return r.fix.changed && r.fix.compile_ok === true;
     case "gave_up":

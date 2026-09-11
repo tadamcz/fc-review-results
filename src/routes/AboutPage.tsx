@@ -25,8 +25,8 @@ export function AboutPage() {
   const m = index.data.meta;
   const t = m.totals;
   const fixes = m.fix;
-  const evidence = m.evidence;
-  const hasEvidence = (evidence.attempted ?? 0) > 0; // the phase did not exist for earlier runs
+  const trivialProofs = m.trivial_proof;
+  const hasTrivialProofs = (trivialProofs.attempted ?? 0) > 0; // the phase did not exist for earlier runs
   return (
     <>
       <TopBar />
@@ -85,15 +85,15 @@ export function AboutPage() {
           </li>
         </ul>
 
-        {hasEvidence && (
+        {hasTrivialProofs && (
           <>
-            <h2>Lean evidence</h2>
+            <h2>Trivial proofs</h2>
             <p>
-              When a review reported misformalizations, the same agent was first asked for one short Lean file, kept outside the repository, that proves or refutes the
-              statements as the file states them: a proof of a supposedly open statement that the defect makes trivial, a disproof by counterexample, or a computation on
-              which a definition and the intended notion disagree — evidence a maintainer can take in at a glance without reading the review. It could bail out when no
-              defect admitted a short demonstration. The harness compiled each file itself (no errors, no <code>sorry</code>); the file pages show it. Of{" "}
-              {evidence.attempted} attempts, {evidence.compiles ?? 0} produced a compiling file and {evidence.gave_up ?? 0} bailed out.
+              When a review reported misformalizations, the same agent was first asked for a trivial proof or disproof: one short Lean file, kept outside the repository,
+              that proves or refutes the statements as the file states them in a few lines — a proof of a supposedly open statement that the defect makes trivial, a
+              disproof by counterexample, or a computation on which a definition and the intended notion disagree — something a maintainer can take in at a glance without
+              reading the review. It could bail out when no defect admitted a short proof. The harness compiled each file itself (no errors, no <code>sorry</code>); the
+              file pages show it. Of {trivialProofs.attempted} attempts, {trivialProofs.compiles ?? 0} produced a compiling file and {trivialProofs.gave_up ?? 0} bailed out.
             </p>
           </>
         )}
@@ -123,7 +123,7 @@ export function AboutPage() {
               <th>Files</th>
               <th>Flagged</th>
               <th>Misformalizations</th>
-              {hasEvidence && <th>Lean evidence</th>}
+              {hasTrivialProofs && <th>Trivial proofs</th>}
               <th>Compiling fixes</th>
               <th>Status issues</th>
             </tr>
@@ -137,7 +137,7 @@ export function AboutPage() {
                 <td className="num">{c.n_files}</td>
                 <td className="num">{c.n_flagged}</td>
                 <td className="num">{c.n_misformalizations}</td>
-                {hasEvidence && <td className="num">{c.n_evidence}</td>}
+                {hasTrivialProofs && <td className="num">{c.n_trivial_proof}</td>}
                 <td className="num">{c.n_fixed}</td>
                 <td className="num">{c.n_status_issues}</td>
               </tr>

@@ -75,7 +75,7 @@ export function ListPage() {
           <code>{meta.fc_commit.slice(0, 10)}</code>
         </a>{" "}
         reviewed · {t.misformalizations} misformalizations reported in {t.flagged} files ·{" "}
-        {meta.evidence.attempted ? <>{meta.evidence.compiles ?? 0} with compiling Lean evidence · </> : null}
+        {meta.trivial_proof.attempted ? <>{meta.trivial_proof.compiles ?? 0} with a compiling trivial proof · </> : null}
         {meta.fix.compiles ?? 0} with a compiling fix · {t.status_issues} status issues · <Link to="/about">about this audit</Link>
       </p>
       <div className="list-layout">

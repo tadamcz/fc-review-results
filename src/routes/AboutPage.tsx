@@ -229,7 +229,7 @@ export function AboutPage() {
 
         {m.upstream && (
           <>
-            <h2>Already reported upstream</h2>
+            <h2>Already reported on GitHub</h2>
             <p>
               On {formatDate(m.upstream.checked_at)} the flagged files were checked against the repository: pull requests open or merged after the reviewed commit that
               carry the <code>misformalization</code> label or reference an issue that does, matched by the files they change, and open issues with that label, matched by
@@ -239,7 +239,8 @@ export function AboutPage() {
               <a href={m.upstream.file} target="_blank" rel="noopener noreferrer">
                 {m.upstream.file}
               </a>
-              , one JSON line per file with the pull requests and issues that cover it and a note on each. The other findings had no upstream report at that time.
+              , one JSON line per file with the pull requests and issues that cover it and a note on each; each such file's page links the item. The other findings
+              had no report on GitHub at that time.
             </p>
           </>
         )}

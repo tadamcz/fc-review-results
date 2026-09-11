@@ -3,11 +3,11 @@ import { join } from "node:path";
 import type { Connect } from "vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin, type ResolvedConfig } from "vite";
-import { SHA, bareUrlRun, latestRun, listRuns, redirectHtml, runsJson } from "./scripts/runs";
+import { SHA, bareUrlRun, latestRun, listRuns, redirectHtml, rootRedirectHtml, runsJson } from "./scripts/runs";
 
 // One app, served once per run at /<fc sha>/ beside that run's data (which it fetches with
-// relative URLs); a redirect page at / pointing at the run the unversioned links refer to
-// (BARE_URL_RUN) and one at /latest/ pointing at the latest full run; and /runs.json, the run
+// relative URLs); a redirect page at / (an old deep link's hash route goes to BARE_URL_RUN's run,
+// a bare address to the latest full run) and one at /latest/ pointing at the latest full run; and /runs.json, the run
 // list the app reads (as ../runs.json) to offer "switch to latest run". The dev and preview
 // servers mirror the deployed layout (GitHub Pages sends /<dir> to /<dir>/).
 function runs(): Plugin {
@@ -33,7 +33,7 @@ function runs(): Plugin {
         const url = new URL(req.url ?? "/", "http://localhost");
         if (url.pathname === "/" || url.pathname === "/index.html") {
           res.setHeader("Content-Type", "text/html; charset=utf-8");
-          res.end(redirectHtml(`./${bareUrlRun().sha}/`));
+          res.end(rootRedirectHtml(`./${bareUrlRun().sha}/`, `./${latestRun().sha}/`));
           return;
         }
         if (url.pathname === "/latest/" || url.pathname === "/latest/index.html") {
@@ -63,7 +63,7 @@ function runs(): Plugin {
         cpSync(join(out, config.build.assetsDir), join(dir, config.build.assetsDir), { recursive: true });
       }
       rmSync(join(out, config.build.assetsDir), { recursive: true });
-      writeFileSync(join(out, "index.html"), redirectHtml(`./${bareUrlRun().sha}/`));
+      writeFileSync(join(out, "index.html"), rootRedirectHtml(`./${bareUrlRun().sha}/`, `./${latestRun().sha}/`));
       mkdirSync(join(out, "latest"), { recursive: true });
       writeFileSync(join(out, "latest", "index.html"), redirectHtml(`../${latestRun().sha}/`));
       writeFileSync(join(out, "runs.json"), runsJson());

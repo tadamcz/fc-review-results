@@ -75,11 +75,13 @@ The app is built once and served once per run at `<site>/<sha>/`, beside that
 run's data, which it fetches with relative URLs (`scripts/runs.ts` and the
 `runs` plugin in `vite.config.ts` lay out `dist/`). File pages are
 `<site>/<sha>/#/f/<collection>/<stem>`, so links to a run stay valid when later
-runs are added. The bare `<site>/` is a small page that redirects to `84063d6942`, the run
-from before runs were versioned, carrying the hash route over: that run's links
-(`<site>/#/f/...`) are posted around GitHub and must keep resolving to the
-findings they were made for, so the target is fixed for good (`BARE_URL_RUN` in
-`scripts/runs.ts`). `<site>/latest/` redirects the same way to the latest full
+runs are added. The bare `<site>/` is a small page that looks at the hash: a
+route (`<site>/#/f/...`, or a filtered list) is an old deep link and goes to
+`84063d6942`, the run from before runs were versioned, with the route carried
+over — that run's links are posted around GitHub and must keep resolving to the
+findings they were made for, so that target is fixed for good (`BARE_URL_RUN` in
+`scripts/runs.ts`); a bare address with no route goes to the latest full run.
+`<site>/latest/` always redirects to the latest full
 run — the newest run over the whole tree; a run over a selection of files, such
 as a pull-request review, is never "latest" — and `<site>/runs.json` lists the
 runs, which is how a page that is not the latest full run shows a "switch to

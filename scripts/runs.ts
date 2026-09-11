@@ -2,12 +2,12 @@
 // data/<sha>/index.json and data/<sha>/files/**, where <sha> is the first ten
 // characters of the commit (as the pages show it). The built site serves the
 // app once per run at <site>/<sha>/ next to that run's data, plus two redirect
-// pages and a run list: the bare <site>/ is a permanent alias of one run,
-// BARE_URL_RUN (the first run's links were <site>/#/f/<id> and are posted
-// around GitHub, so they must keep resolving to that run's findings; the alias
-// never moves to a newer run); <site>/latest/ goes to the latest full run; and
-// <site>/runs.json lists the runs, so a page can tell whether it is the latest
-// and offer to switch.
+// pages and a run list. The bare <site>/ goes to the latest full run when it
+// carries no route, and to BARE_URL_RUN when it carries one: the first run's
+// links were <site>/#/f/<id> and are posted around GitHub, so a hash route on
+// the bare URL must keep resolving to that run's findings, for good.
+// <site>/latest/ goes to the latest full run; <site>/runs.json lists the runs,
+// so a page can tell whether it is the latest and offer to switch.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -17,9 +17,9 @@ export const SHORT = 10;
 export const SHA = /^[0-9a-f]{10}$/;
 export const shortSha = (commit: string) => commit.slice(0, SHORT);
 
-// The run the bare <site>/ redirects to: the one that existed before runs were
-// versioned. Fixed for good — changing it would point every link made from that
-// run at another run's findings.
+// The run an old deep link on the bare <site>/ (a hash route, <site>/#/f/<id>) refers to: the
+// one that existed before runs were versioned. Fixed for good — changing it would point every
+// link made from that run at another run's findings.
 export const BARE_URL_RUN = "84063d6942";
 
 export type Run = {
@@ -82,23 +82,38 @@ export function runsJson(runs = listRuns()): string {
 }
 
 // A redirect page. Links carry the hash router's route (and the list's filters, which live
-// in the hash too), and the script carries it over to `target`, a URL relative to the page:
+// in the hash too), and the script carries it over to the target, a URL relative to the page:
 // ./<sha>/ from the site root, ../<sha>/ from <site>/latest/. The meta refresh is only for
 // browsers without JavaScript: it cannot carry the hash, and outside <noscript> its
 // navigation could race the script's and drop the route.
-export function redirectHtml(target: string): string {
+function redirectPage(script: string, fallback: string): string {
   return `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="robots" content="noindex" />
     <title>Formal Conjectures audit</title>
-    <script>location.replace(${JSON.stringify(target)} + location.search + location.hash);</script>
-    <noscript><meta http-equiv="refresh" content="0; url=${target}" /></noscript>
+    <script>${script}</script>
+    <noscript><meta http-equiv="refresh" content="0; url=${fallback}" /></noscript>
   </head>
   <body>
-    <p>Redirecting to the <a href="${target}">audit</a>…</p>
+    <p>Redirecting to the <a href="${fallback}">audit</a>…</p>
   </body>
 </html>
 `;
+}
+
+// <site>/latest/ and the like: one fixed target
+export function redirectHtml(target: string): string {
+  return redirectPage(`location.replace(${JSON.stringify(target)} + location.search + location.hash);`, target);
+}
+
+// The site root: a hash route (anything beyond "#" or "#/") is an old deep link and goes to
+// BARE_URL_RUN's run; a bare address goes to the latest full run, as does the no-JavaScript
+// fallback, which cannot see the hash.
+export function rootRedirectHtml(deepLinkTarget: string, latestTarget: string): string {
+  const script =
+    `var h = location.hash; var deep = h && h !== "#" && h !== "#/"; ` +
+    `location.replace((deep ? ${JSON.stringify(deepLinkTarget)} : ${JSON.stringify(latestTarget)}) + location.search + h);`;
+  return redirectPage(script, latestTarget);
 }

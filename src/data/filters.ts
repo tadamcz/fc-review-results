@@ -1,8 +1,8 @@
 // URL query <-> list state, search, sort, and neighbours for ‹ › on the file page.
-import type { IndexRow } from "./schema";
+import { evidenceCompiles, type IndexRow } from "./schema";
 
-export type Show = "flagged" | "all" | "fixed" | "gave_up" | "status" | "clean" | "unsubmitted";
-export type Sort = "misf" | "confidence" | "id" | "cost";
+export type Show = "flagged" | "all" | "evidence" | "fixed" | "gave_up" | "status" | "clean" | "unsubmitted";
+export type Sort = "misf" | "confidence" | "id";
 
 export interface ListState {
   q: string;
@@ -16,6 +16,7 @@ export interface ListState {
 export const SHOW_LABELS: Record<Show, string> = {
   flagged: "with misformalizations",
   all: "all files",
+  evidence: "with compiling Lean evidence",
   fixed: "with a compiling fix",
   gave_up: "fix bailed out",
   status: "with status issues",
@@ -31,7 +32,7 @@ export const CONF_STEPS = [0.5, 0.7, 0.8, 0.9, 0.95, 0.99];
 // findings, so the Kind and Confidence filters only mean something when the
 // shown set is about misformalizations; for the other views they are inert.
 export function misfFiltersApply(show: Show): boolean {
-  return show === "flagged" || show === "all" || show === "fixed" || show === "gave_up";
+  return show === "flagged" || show === "all" || show === "evidence" || show === "fixed" || show === "gave_up";
 }
 
 function num(v: string | null): number | null {
@@ -41,7 +42,7 @@ function num(v: string | null): number | null {
 }
 
 const SHOWS = Object.keys(SHOW_LABELS) as Show[];
-const SORTS: Sort[] = ["misf", "confidence", "id", "cost"];
+const SORTS: Sort[] = ["misf", "confidence", "id"];
 
 export function parseState(params: URLSearchParams): ListState {
   const show = params.get("show");
@@ -77,6 +78,8 @@ function matchesShow(r: IndexRow, show: Show): boolean {
       return true;
     case "flagged":
       return r.n_misformalizations > 0;
+    case "evidence":
+      return evidenceCompiles(r.evidence);
     case "fixed":
       return r.fix.changed && r.fix.compile_ok === true;
     case "gave_up":
@@ -109,9 +112,6 @@ export function applyFilters(rows: IndexRow[], state: ListState): IndexRow[] {
       break;
     case "confidence":
       out.sort((a, b) => (b.max_confidence ?? -1) - (a.max_confidence ?? -1) || byId(a, b));
-      break;
-    case "cost":
-      out.sort((a, b) => b.cost_usd - a.cost_usd || byId(a, b));
       break;
     case "id":
       out.sort(byId);

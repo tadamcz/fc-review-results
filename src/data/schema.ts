@@ -48,6 +48,23 @@ export const FixRow = z.object({
 });
 export type FixRow = z.infer<typeof FixRow>;
 
+// The evidence phase: one short Lean file, outside the checkout, proving or
+// refuting the misformalized statements as the file states them. Runs from
+// before the phase existed carry no `evidence`: the defaults below stand in.
+export const EvidenceRow = z.object({
+  attempted: z.boolean(),
+  written: z.boolean(),
+  compile_ok: z.boolean().nullable(),
+  sorry_free: z.boolean().nullable(),
+  gave_up: z.boolean(),
+  n_demonstrated: z.number(),
+});
+export type EvidenceRow = z.infer<typeof EvidenceRow>;
+export const NO_EVIDENCE: EvidenceRow = { attempted: false, written: false, compile_ok: null, sorry_free: null, gave_up: false, n_demonstrated: 0 };
+
+// evidence a reader can trust: the file exists, compiles, and proves without sorry
+export const evidenceCompiles = (e: EvidenceRow) => e.written && e.compile_ok === true && e.sorry_free === true;
+
 export const IndexRow = z.object({
   id: z.string(),
   path: z.string(),
@@ -63,6 +80,7 @@ export const IndexRow = z.object({
   kinds: z.array(z.string()),
   declarations: z.array(z.string()),
   headline: z.string().nullable(),
+  evidence: EvidenceRow.default(NO_EVIDENCE),
   fix: FixRow,
   lean_lines: z.number(),
   cost_usd: z.number(),
@@ -76,6 +94,7 @@ export const CollectionMeta = z.object({
   n_flagged: z.number(),
   n_misformalizations: z.number(),
   n_fixed: z.number(),
+  n_evidence: z.number().default(0),
   n_status_issues: z.number(),
 });
 export type CollectionMeta = z.infer<typeof CollectionMeta>;
@@ -96,6 +115,7 @@ export const Meta = z.object({
   fc_tree_url: z.string(),
   cost_usd: z.number(),
   totals: z.record(z.string(), z.number()),
+  evidence: z.record(z.string(), z.number()).default({}),
   fix: z.record(z.string(), z.number()),
   collections: z.record(z.string(), CollectionMeta),
   generated_at: z.string(),
@@ -126,6 +146,26 @@ export const CompileError = z.object({
   text: z.string(),
 });
 
+export const EvidenceSubmission = z.object({
+  demonstrated: z.array(z.object({ declaration: z.string(), kind: z.string(), claim: z.string().default("") })),
+  not_demonstrated: z.array(z.object({ declaration: z.string(), reason: z.string() })).default([]),
+  summary: z.string().default(""),
+  compiles: z.boolean().default(true),
+  gave_up: z.boolean().default(false),
+  gave_up_reason: z.string().default(""),
+});
+export type EvidenceSubmission = z.infer<typeof EvidenceSubmission>;
+
+export const FileEvidence = EvidenceRow.extend({
+  compile_errors: z.array(CompileError).default([]),
+  limit_hit: z.string().nullable().default(null),
+  submission: EvidenceSubmission.nullable().default(null),
+  checkout_modified: z.array(z.string()).default([]),
+  lean: z.string().nullable().default(null),
+});
+export type FileEvidence = z.infer<typeof FileEvidence>;
+export const NO_FILE_EVIDENCE: FileEvidence = { ...NO_EVIDENCE, compile_errors: [], limit_hit: null, submission: null, checkout_modified: [], lean: null };
+
 export const FileFix = FixRow.extend({
   compile_clean: z.boolean().nullable(),
   compile_errors: z.array(CompileError),
@@ -155,6 +195,7 @@ export const FileEntry = z.object({
     could_not_verify: z.array(z.string()),
     notes: z.string(),
   }),
+  evidence: FileEvidence.default(NO_FILE_EVIDENCE),
   fix: FileFix,
   sample: z.object({
     uuid: z.string().nullable(),

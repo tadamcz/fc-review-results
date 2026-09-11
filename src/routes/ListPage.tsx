@@ -1,9 +1,9 @@
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { RowChips } from "../components/Chips";
+import { KindChip, RowChips } from "../components/Chips";
 import { TopBar } from "../components/TopBar";
 import { ConfidenceContext, effectiveState, showConfidence } from "../data/confidence";
-import { CONF_STEPS, DEFAULT_STATE, SHOW_LABELS, applyFilters, hasFilters, misfFiltersApply, money, parseState, serializeState, type ListState, type Show, type Sort } from "../data/filters";
+import { CONF_STEPS, DEFAULT_STATE, SHOW_LABELS, applyFilters, hasFilters, misfFiltersApply, parseState, serializeState, type ListState, type Show, type Sort } from "../data/filters";
 import { useIndex } from "../data/load";
 import { kindLabel, type IndexRow, type Meta } from "../data/schema";
 
@@ -74,8 +74,9 @@ export function ListPage() {
         <a href={meta.fc_tree_url} target="_blank" rel="noopener noreferrer">
           <code>{meta.fc_commit.slice(0, 10)}</code>
         </a>{" "}
-        reviewed · {t.misformalizations} misformalizations reported in {t.flagged} files · {meta.fix.compiles ?? 0} with a compiling fix ·{" "}
-        {t.status_issues} status issues · <Link to="/about">about this audit</Link>
+        reviewed · {t.misformalizations} misformalizations reported in {t.flagged} files ·{" "}
+        {meta.evidence.attempted ? <>{meta.evidence.compiles ?? 0} with compiling Lean evidence · </> : null}
+        {meta.fix.compiles ?? 0} with a compiling fix · {t.status_issues} status issues · <Link to="/about">about this audit</Link>
       </p>
       <div className="list-layout">
         <aside className="list-side">
@@ -98,7 +99,6 @@ export function ListPage() {
               <select value={effectiveState(state, showConf).sort} onChange={(e) => update({ sort: e.target.value as Sort })}>
                 <option value="misf">most misformalizations</option>
                 {showConf && <option value="confidence">highest confidence</option>}
-                <option value="cost">most expensive review</option>
                 <option value="id">file id A–Z</option>
               </select>
             </label>
@@ -234,8 +234,9 @@ const Row = memo(function Row({ row, search, showCollection, showConf }: { row: 
         </span>
         <span className="counts">
           {showConf && row.max_confidence !== null && <span title="highest confidence among the misformalizations">p ≤ {row.max_confidence.toFixed(2)}</span>}
-          {showConf && row.max_confidence !== null && " · "}
-          <span title="cost of the review">{money(row.cost_usd)}</span> · <span title="working time">{row.minutes} min</span>
+          {row.kinds.map((k) => (
+            <KindChip key={k} kind={k} />
+          ))}
         </span>
       </div>
     </li>

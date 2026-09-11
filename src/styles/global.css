@@ -135,7 +135,7 @@ p { margin: 0.5rem 0; }
 .row-line2 { font-size: 0.93rem; color: #334155; margin-top: 1px; }
 .row-statement { min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .row-area { color: var(--muted); }
-.counts { color: var(--muted); white-space: nowrap; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.counts { color: var(--muted); white-space: nowrap; font-size: 0.9rem; font-variant-numeric: tabular-nums; display: inline-flex; gap: 6px; align-items: baseline; flex: 0 0 auto; }
 .chips { display: inline-flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 
 /* chips */

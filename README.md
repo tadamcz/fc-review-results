@@ -21,9 +21,11 @@ these files (Lean is highlighted in the browser):
 - `<sha>/files/<collection>/<stem>.json` — one file: its Lean text at the
   reviewed commit, the review (findings with severity, kind, description, source
   evidence, suggested fix, confidence; status issues; reformulations judged
-  equivalent; sources consulted; notes), the fix phase (the model's report, the
-  harness compile check, the edited text when it changed) and the sample's cost
-  and time
+  equivalent; sources consulted; notes), the evidence phase (the model's
+  report, the harness compile check, the short Lean file it wrote to prove or
+  refute the misformalized statements; absent for runs before the phase
+  existed), the fix phase (the model's report, the harness compile check, the
+  edited text when it changed) and the sample's cost and time
 
 ```sh
 uv run python -m autoformalization.review_site.export \

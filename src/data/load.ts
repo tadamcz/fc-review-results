@@ -1,28 +1,30 @@
 // Fetch + cache of the exporter's JSON. The app is served at <site>/<fc sha>/
 // beside that run's index.json and files/** (see scripts/runs.ts), so the paths
-// are relative to the document.
+// are relative to the document. The JSON goes through the zod schemas, as in
+// scripts/check.ts: the defaults there are what lets a run exported before a
+// field existed (e.g. `evidence`) render.
 import { useEffect, useState } from "react";
-import type { FileEntry, IndexFile } from "./schema";
+import type { z } from "zod";
+import { FileEntry, IndexFile } from "./schema";
 
 const cache = new Map<string, Promise<unknown>>();
 
-function fetchJson<T>(rel: string): Promise<T> {
+function fetchJson<S extends z.ZodType>(rel: string, schema: S): Promise<z.output<S>> {
   let p = cache.get(rel);
   if (!p) {
-    p = fetch(rel).then((r) => {
+    p = fetch(rel).then(async (r) => {
       if (!r.ok) throw new Error(`${rel}: HTTP ${r.status}`);
-      return r.json();
+      return schema.parse(await r.json());
     });
     p.catch(() => cache.delete(rel));
     cache.set(rel, p);
   }
-  return p as Promise<T>;
+  return p as Promise<z.output<S>>;
 }
 
-export const loadIndex = () => fetchJson<IndexFile>("index.json");
+export const loadIndex = () => fetchJson("index.json", IndexFile);
 // ids carry slashes (ErdosProblems/1): each segment is encoded, the slashes stay
-export const loadFile = (id: string) =>
-  fetchJson<FileEntry>(`files/${id.split("/").map(encodeURIComponent).join("/")}.json`);
+export const loadFile = (id: string) => fetchJson(`files/${id.split("/").map(encodeURIComponent).join("/")}.json`, FileEntry);
 
 export type Loaded<T> = { status: "loading" } | { status: "error"; error: string } | { status: "ok"; data: T };
 

@@ -1,7 +1,8 @@
 import { useEffect, useMemo } from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router";
-import { FixChip } from "../components/Chips";
+import { EvidenceChip, FixChip } from "../components/Chips";
 import { Code } from "../components/Code";
+import { evidenceCompiles } from "../data/schema";
 import { DiffView, diffStats } from "../components/DiffView";
 import { Disclosure } from "../components/Disclosure";
 import { Markdown } from "../components/Markdown";
@@ -105,6 +106,7 @@ function FileBody({ entry, search }: { entry: FileEntry; search: string }) {
       <Summary entry={entry} misf={misf.length} />
 
       <Findings entry={entry} search={search} />
+      <EvidenceSection entry={entry} />
       <FixSection entry={entry} />
       <StatusIssues issues={entry.review.status_issues} search={search} />
       <Reformulations items={entry.review.reformulations} search={search} />
@@ -137,7 +139,7 @@ function Summary({ entry, misf }: { entry: FileEntry; misf: number }) {
   return (
     <div className={`status-line`}>
       <div className={`status ${misf ? "warn" : ""}`}>
-        <strong>{parts.join(" · ")}</strong> <FixChip fix={entry.fix} />
+        <strong>{parts.join(" · ")}</strong> <EvidenceChip evidence={entry.evidence} /> <FixChip fix={entry.fix} />
       </div>
       {entry.sample.transcript_url && (
         <div className="actions">
@@ -148,6 +150,79 @@ function Summary({ entry, misf }: { entry: FileEntry; misf: number }) {
         </div>
       )}
     </div>
+  );
+}
+
+function EvidenceSection({ entry }: { entry: FileEntry }) {
+  const ev = entry.evidence;
+  if (!ev.attempted) return null;
+  const sub = ev.submission;
+  const ok = evidenceCompiles(ev);
+  return (
+    <>
+      <h2 id="evidence">Lean evidence</h2>
+      <p className="muted small">
+        After submitting the review, the same model was asked for one short Lean file, kept outside the repository, that proves or refutes the misformalized statements as the
+        file states them: a proof of a supposedly open statement that the defect makes trivial, a disproof by counterexample, or a computation on which a definition and the
+        intended notion disagree. It could bail out when no defect admitted a short demonstration. The compile check is the harness's own run of <code>lake env lean</code> on
+        the file, which must report no errors and no <code>sorry</code>. Unreviewed by a human.
+      </p>
+      <div className={`status ${ev.gave_up ? "" : ok ? "fc" : "warn"}`}>
+        <EvidenceChip evidence={ev} />{" "}
+        {ok && (
+          <span className="muted">
+            {ev.n_demonstrated} declaration{ev.n_demonstrated === 1 ? "" : "s"} demonstrated
+          </span>
+        )}
+        {ev.limit_hit && <span className="muted"> · stopped by limit: {ev.limit_hit}</span>}
+        {ev.checkout_modified.length > 0 && <span className="error"> · the evidence phase touched {ev.checkout_modified.length} path(s) in the checkout</span>}
+      </div>
+      {sub && (
+        <div className="fix-report">
+          {sub.gave_up && (
+            <p>
+              <strong>Bailed out:</strong> <Markdown text={sub.gave_up_reason} className="inline-md" />
+            </p>
+          )}
+          {sub.summary && <Markdown text={sub.summary} className="fix-summary" />}
+          {sub.demonstrated.length > 0 && (
+            <ul className="plain-list small">
+              {sub.demonstrated.map((d, i) => (
+                <li key={i}>
+                  <span className="label">{d.kind}</span> <code className="fq">{d.declaration}</code>: {d.claim}
+                </li>
+              ))}
+            </ul>
+          )}
+          {sub.not_demonstrated.length > 0 && (
+            <ul className="plain-list small">
+              {sub.not_demonstrated.map((n, i) => (
+                <li key={i}>
+                  <span className="label">Not demonstrated</span> <code className="fq">{n.declaration}</code>: {n.reason}
+                </li>
+              ))}
+            </ul>
+          )}
+          {ev.written && sub.compiles !== ok && (
+            <p className="small error">
+              The model reported compiles = {String(sub.compiles)}; the harness check says {ok ? "it compiles without sorry" : ev.compile_ok ? "it compiles but uses sorry" : "it does not compile"}.
+            </p>
+          )}
+        </div>
+      )}
+      {ev.compile_errors.length > 0 && (
+        <Disclosure summary={<span className="error">{ev.compile_errors.length} compile error(s) on the evidence file</span>}>
+          <ul className="plain-list small">
+            {ev.compile_errors.map((e, i) => (
+              <li key={i}>
+                {e.line ? <code>line {e.line}</code> : null} {e.text}
+              </li>
+            ))}
+          </ul>
+        </Disclosure>
+      )}
+      {ev.lean && <Code code={ev.lean} startLine={1} className="whole-file" />}
+    </>
   );
 }
 

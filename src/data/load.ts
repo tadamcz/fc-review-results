@@ -56,6 +56,15 @@ export function useRuns(): Loaded<RunsFile> {
   return useLoaded(loadRuns, "runs");
 }
 
+// The latest full run's sha when the run this page shows is not it — a pull-request review or an
+// earlier audit — else null: what "switch to latest run" links to. Null while either file loads.
+export function useSwitchToLatest(): string | null {
+  const index = useIndex();
+  const runs = useRuns();
+  if (index.status !== "ok" || runs.status !== "ok") return null;
+  return runs.data.latest !== index.data.meta.fc_commit.slice(0, 10) ? runs.data.latest : null;
+}
+
 export function useFile(id: string | undefined): Loaded<FileEntry> {
   return useLoaded(id ? () => loadFile(id) : null, `file:${id}`);
 }

@@ -32,6 +32,12 @@ these files (Lean is highlighted in the browser):
   when it was checked); `meta.upstream` in `index.json` points at it, the
   About page links it, and each covered file's page links its strongest
   covering item (a merged fix, else an open pull request, else an issue)
+- `<sha>/issues.jsonl` — optional, written by `pnpm run issues` after filing:
+  one JSON line per issue this project filed on formal-conjectures for a
+  flagged file (file, path, fc_commit, number, url, title, created_at,
+  comment_url). The site fetches it optimistically, so a run with none filed
+  needs no pointer; each filed file's page links its issue and the About page
+  links the file
 
 ```sh
 uv run python -m autoformalization.review_site.export \

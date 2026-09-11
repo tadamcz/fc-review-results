@@ -269,3 +269,17 @@ export const UpstreamRecord = z.object({
   checked_at: z.string(),
 });
 export type UpstreamRecord = z.infer<typeof UpstreamRecord>;
+
+// One line of <sha>/issues.jsonl: an issue this project filed on formal-conjectures for a flagged file
+// (scripts/file-issues.ts writes it). The file is optional; the site treats its absence as "none filed".
+export const IssueRecord = z.object({
+  file: z.string(),
+  path: z.string(),
+  fc_commit: z.string(),
+  number: z.number(),
+  url: z.string(),
+  title: z.string(),
+  created_at: z.string(),
+  comment_url: z.string().nullable().default(null),
+});
+export type IssueRecord = z.infer<typeof IssueRecord>;

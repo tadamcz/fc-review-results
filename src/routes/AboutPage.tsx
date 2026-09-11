@@ -4,7 +4,7 @@ import { CommitAge } from "../components/CommitAge";
 import { TopBar } from "../components/TopBar";
 import { showConfidence } from "../data/confidence";
 import { formatDate, money, plural } from "../data/filters";
-import { useIndex } from "../data/load";
+import { useIndex, useIssues } from "../data/load";
 import { runScope } from "../data/schema";
 import { orderedCollections } from "./ListPage";
 
@@ -13,6 +13,7 @@ const TASK_URL = "https://github.com/epoch-research/autoformalization/tree/fc-re
 
 export function AboutPage() {
   const index = useIndex();
+  const filed = useIssues(); // the issues this project filed for the run, if any
   useEffect(() => {
     document.title = "About · Formal Conjectures audit";
   }, []);
@@ -30,6 +31,8 @@ export function AboutPage() {
   const trivialProofs = m.trivial_proof;
   const hasTrivialProofs = (trivialProofs.attempted ?? 0) > 0; // the phase did not exist for earlier runs
   const { subset, library } = runScope(m);
+  const issues = filed.status === "ok" ? [...filed.data.values()] : [];
+  const filedOn = issues.length ? issues.map((i) => i.created_at).sort()[issues.length - 1] : null;
   const trivialProofPhase = hasTrivialProofs || m.task_args.trivial_proof === true; // the phase existed for this run
   const noteLink = m.note?.url ? m.note.url.replace(/^https?:\/\//, "") : null;
   return (
@@ -241,6 +244,16 @@ export function AboutPage() {
               </a>
               , one JSON line per file with the pull requests and issues that cover it and a note on each; each such file's page links the item. The other findings
               had no report on GitHub at that time.
+              {issues.length > 0 && filedOn && (
+                <>
+                  {" "}
+                  For those, this audit filed {issues.length} issues on {formatDate(filedOn)}, one per file, each with a one-sentence summary and a link to the file's page here:{" "}
+                  <a href="issues.jsonl" target="_blank" rel="noopener noreferrer">
+                    issues.jsonl
+                  </a>
+                  ; each file's page links its issue.
+                </>
+              )}
             </p>
           </>
         )}

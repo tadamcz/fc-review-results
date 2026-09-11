@@ -10,9 +10,9 @@ import { Findings, Reformulations, ReviewerNotes, StatusIssues, jumpToLine } fro
 import { TopBar } from "../components/TopBar";
 import { ConfidenceContext, effectiveState, showConfidence } from "../data/confidence";
 import { DEFAULT_STATE, applyFilters, defaultShow, neighbours, parseState } from "../data/filters";
-import { useFile, useIndex, useUpstream } from "../data/load";
+import { useFile, useIndex, useIssues, useUpstream } from "../data/load";
 import { fixLabel, summaryParts, trivialProofLabel } from "../data/labels";
-import type { FileEntry, UpstreamRecord } from "../data/schema";
+import type { FileEntry, IssueRecord, UpstreamRecord } from "../data/schema";
 
 export function FilePage() {
   const params = useParams();
@@ -26,6 +26,7 @@ export function FilePage() {
   const state = useMemo(() => parseState(search, dflt), [search, dflt]);
   const showConf = index.status === "ok" ? showConfidence(index.data.meta) : true;
   const upstream = useUpstream(index.status === "ok" ? index.data.meta.upstream : null); // the run's upstream check, if any
+  const filed = useIssues(); // the issues this project filed for the run, if any
   const ids = useMemo(
     () => (index.status === "ok" ? applyFilters(index.data.files, effectiveState(state, showConf)).map((r) => r.id) : []),
     [index, state, showConf],
@@ -68,7 +69,12 @@ export function FilePage() {
         {file.status === "error" && <p className="error">Could not load this file: {file.error}</p>}
         {file.status === "ok" && index.status === "ok" && (
           <ConfidenceContext.Provider value={showConf}>
-            <FileBody entry={file.data} search={searchStr} upstream={upstream.status === "ok" ? (upstream.data.get(file.data.id) ?? null) : null} />
+            <FileBody
+              entry={file.data}
+              search={searchStr}
+              upstream={upstream.status === "ok" ? (upstream.data.get(file.data.id) ?? null) : null}
+              filed={filed.status === "ok" ? (filed.data.get(file.data.id) ?? null) : null}
+            />
           </ConfidenceContext.Provider>
         )}
       </main>
@@ -76,7 +82,7 @@ export function FilePage() {
   );
 }
 
-function FileBody({ entry, search, upstream }: { entry: FileEntry; search: string; upstream: UpstreamRecord | null }) {
+function FileBody({ entry, search, upstream, filed }: { entry: FileEntry; search: string; upstream: UpstreamRecord | null; filed: IssueRecord | null }) {
   const marks = useMemo(() => {
     const m: Record<number, string> = {};
     for (const r of entry.review.reformulations) if (r.line) m[r.line] = "reform";
@@ -105,7 +111,7 @@ function FileBody({ entry, search, upstream }: { entry: FileEntry; search: strin
         </a>{" "}
         · <span className="muted">module</span> <code>{entry.module}</code>
       </p>
-      <Summary entry={entry} upstream={upstream} />
+      <Summary entry={entry} upstream={upstream} filed={filed} />
 
       <Findings entry={entry} search={search} />
       <TrivialProofSection entry={entry} />
@@ -125,16 +131,25 @@ function FileBody({ entry, search, upstream }: { entry: FileEntry; search: strin
   );
 }
 
-// The GitHub item already covering this file's misformalizations, when the run's check found one: a fix
-// merged after the reviewed commit, else an open pull request, else an open issue. One link, "reported"
-// with the GitHub mark; what it is and its title on hover.
-function UpstreamLink({ rec }: { rec: UpstreamRecord }) {
-  const rank = (c: UpstreamRecord["covered_by"][number]) => (c.state === "merged" ? 0 : c.type === "pr" ? 1 : 2);
-  const best = [...rec.covered_by].sort((a, b) => rank(a) - rank(b))[0];
-  if (!best) return null;
-  const what = best.state === "merged" ? "Fixed by pull request" : best.type === "pr" ? "Fix proposed in pull request" : "Reported in issue";
+// "reported" with the GitHub mark, linking to the GitHub item about this file's misformalizations:
+// the upstream item already covering them when the run's check found one (a fix merged after the
+// reviewed commit, else an open pull request, else an open issue), otherwise the issue this project
+// filed. What it is and its title on hover.
+function GitHubLink({ upstream, filed }: { upstream: UpstreamRecord | null; filed: IssueRecord | null }) {
+  let href: string, title: string;
+  if (upstream) {
+    const rank = (c: UpstreamRecord["covered_by"][number]) => (c.state === "merged" ? 0 : c.type === "pr" ? 1 : 2);
+    const best = [...upstream.covered_by].sort((a, b) => rank(a) - rank(b))[0];
+    if (!best) return null;
+    const what = best.state === "merged" ? "Fixed by pull request" : best.type === "pr" ? "Fix proposed in pull request" : "Reported in issue";
+    href = best.url;
+    title = `${what} #${best.number}: ${best.title}`;
+  } else if (filed) {
+    href = filed.url;
+    title = `Reported by this audit in issue #${filed.number}: ${filed.title}`;
+  } else return null;
   return (
-    <a className="chip upstream" href={best.url} target="_blank" rel="noopener noreferrer" title={`${what} #${best.number}: ${best.title}`}>
+    <a className="chip upstream" href={href} target="_blank" rel="noopener noreferrer" title={title}>
       <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
         <path
           fill="currentColor"
@@ -146,10 +161,10 @@ function UpstreamLink({ rec }: { rec: UpstreamRecord }) {
   );
 }
 
-function Summary({ entry, upstream }: { entry: FileEntry; upstream: UpstreamRecord | null }) {
+function Summary({ entry, upstream, filed }: { entry: FileEntry; upstream: UpstreamRecord | null; filed: IssueRecord | null }) {
   const parts = summaryParts(entry);
   const misf = entry.review.findings.filter((f) => f.severity === "misformalization").length;
-  const outcomes = Boolean(fixLabel(entry.fix) || upstream); // anything for the second line: what was done about the problems
+  const outcomes = Boolean(fixLabel(entry.fix) || upstream || filed); // anything for the second line: what was done about the problems
   return (
     <div className={`status-line`}>
       <div className={`status ${misf ? "warn" : ""}`}>
@@ -163,7 +178,7 @@ function Summary({ entry, upstream }: { entry: FileEntry; upstream: UpstreamReco
         {outcomes && (
           <div className="status-fixes">
             <FixChip fix={entry.fix} />
-            {upstream && <UpstreamLink rec={upstream} />}
+            <GitHubLink upstream={upstream} filed={filed} />
           </div>
         )}
       </div>

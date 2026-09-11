@@ -11,6 +11,10 @@
 //   --only id[,id...]    restrict to these file ids
 //   --repo owner/name    default google-deepmind/formal-conjectures (a fork, to test the rendering)
 //
+// Every run also rewrites data/<sha>/issues.jsonl from created.jsonl — one line per filed issue: file,
+// path, fc_commit, number, url, title, created_at, comment_url — which the site serves beside the run
+// and its file pages link (a 404 there means no issues filed for the run).
+//
 // An issue: title "<file id>: <draft title>"; body = the draft's one-sentence summary, the file's page on
 // the site, bullets mirroring the file page's summary band (the counts, the trivial-proof outcome, the fix
 // outcome), a provenance footnote. Labels: misformalization, ai-audit, ai-audit-<sha>; all three must
@@ -31,6 +35,7 @@ import { FileEntry, IndexFile, UpstreamRecord } from "../src/data/schema";
 import { DATA, SHA } from "./runs";
 
 const SITE = "https://tadamcz.com/fc-review-results";
+const COMMENT_FOOTNOTE = "This comment was written by a language model and not reviewed by a human.";
 const REPO_DEFAULT = "google-deepmind/formal-conjectures";
 const ISSUES_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "issues");
 
@@ -140,7 +145,9 @@ async function main() {
         "",
         `<sub>Found by a language-model audit of the repository at ${sha}. Not reviewed by a human. This issue's title and description were written by a language model as well.</sub>`,
       ].join("\n") + "\n";
-    const comment = draft.related_comments.length ? draft.related_comments.map((c) => c.comment).join("\n\n") + "\n" : null;
+    const comment = draft.related_comments.length
+      ? draft.related_comments.map((c) => c.comment).join("\n\n") + `\n\n<sub>${COMMENT_FOOTNOTE}</sub>\n`
+      : null;
     return { title, body, comment };
   };
 
@@ -154,6 +161,26 @@ async function main() {
   writeFileSync(join(dir, "preview.md"), preview.join("\n"));
   const todo = targets.filter((t) => !created.has(t));
   console.log(`${all.length} files to report for ${sha}; ${targets.length} selected; ${targets.length - todo.length} created already; ${todo.length} to create. Preview: issues/${sha}/preview.md`);
+  const publish = () => {
+    // the sidecar the site serves: what was filed, in file order
+    const paths = new Map(index.files.map((r) => [r.id, r.path]));
+    const lines = [...created.values()]
+      .sort((a, b) => a.file.localeCompare(b.file))
+      .map((c) =>
+        JSON.stringify({
+          file: c.file,
+          path: paths.get(c.file),
+          fc_commit: index.meta.fc_commit,
+          number: c.number,
+          url: c.url,
+          title: `${c.file}: ${drafts.get(c.file)!.title}`,
+          created_at: c.created_at,
+          comment_url: c.comment_url,
+        }),
+      );
+    if (lines.length) writeFileSync(join(runDir, "issues.jsonl"), lines.join("\n") + "\n");
+  };
+  publish();
   if (!create) return;
 
   // create, recording each issue the moment it exists
@@ -183,6 +210,7 @@ async function main() {
     }
     await sleep(sleepMs);
   }
+  publish();
   console.log(`done: ${n} created this run; ${todo.length - n} remaining`);
 }
 

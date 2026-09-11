@@ -2,7 +2,7 @@
 // cross-file invariants the site relies on. Runs first in `pnpm build`.
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { FileEntry, IndexFile, trivialProofCompiles } from "../src/data/schema";
+import { FileEntry, IndexFile, IssueRecord, trivialProofCompiles } from "../src/data/schema";
 import { DATA as ROOT, bareUrlRun, latestRun, listRuns } from "./runs";
 
 const runs = listRuns();
@@ -33,6 +33,24 @@ function checkRun(sha: string): string {
 
   const onDisk = walk(join(DATA, "files"));
   if (JSON.stringify(onDisk) !== JSON.stringify(ids)) problem(`files/**.json (${onDisk.length}) != index ids (${ids.length})`);
+
+  // the issues this project filed: one JSON line per flagged file, none of them covered upstream
+  const issuesPath = join(DATA, "issues.jsonl");
+  if (existsSync(issuesPath)) {
+    const recs = readFileSync(issuesPath, "utf8").split("\n").filter(Boolean).map((l) => IssueRecord.parse(JSON.parse(l)));
+    const flagged = new Set(index.files.filter((r) => r.n_misformalizations > 0).map((r) => r.id));
+    const seen = new Set<string>();
+    for (const r of recs) {
+      if (!flagged.has(r.file)) problem(`issues.jsonl: ${r.file} is not a flagged file of this run`);
+      if (seen.has(r.file)) problem(`issues.jsonl: ${r.file} appears twice`);
+      seen.add(r.file);
+      if (r.fc_commit !== index.meta.fc_commit) problem(`issues.jsonl: ${r.file} carries fc_commit ${r.fc_commit}`);
+    }
+    if (index.meta.upstream) {
+      const covered = new Set(readFileSync(join(DATA, index.meta.upstream.file), "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l).file as string));
+      for (const r of recs) if (covered.has(r.file)) problem(`issues.jsonl: ${r.file} is also in ${index.meta.upstream.file}`);
+    }
+  }
 
   // the upstream check sidecar: one JSON line per file already reported or fixed upstream
   const up = index.meta.upstream;

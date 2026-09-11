@@ -5,7 +5,7 @@
 // field existed (e.g. `trivial_proof`) render.
 import { useEffect, useState } from "react";
 import type { z } from "zod";
-import { FileEntry, IndexFile, RunsFile, UpstreamRecord, type Meta } from "./schema";
+import { FileEntry, IndexFile, IssueRecord, RunsFile, UpstreamRecord, type Meta } from "./schema";
 
 const cache = new Map<string, Promise<unknown>>();
 
@@ -39,6 +39,25 @@ export function loadUpstream(file: string): Promise<Map<string, UpstreamRecord>>
     });
     p.catch(() => cache.delete(`jsonl:${file}`));
     cache.set(`jsonl:${file}`, p);
+  }
+  return p;
+}
+
+// <sha>/issues.jsonl, the issues this project filed for the run, keyed by file id; a missing file (404)
+// is the normal case for a run with none, so it resolves to an empty map rather than an error
+export function loadIssues(): Promise<Map<string, IssueRecord>> {
+  let p = cache.get("jsonl:issues.jsonl") as Promise<Map<string, IssueRecord>> | undefined;
+  if (!p) {
+    p = fetch("issues.jsonl").then(async (r) => {
+      if (r.status === 404) return new Map<string, IssueRecord>();
+      if (!r.ok) throw new Error(`issues.jsonl: HTTP ${r.status}`);
+      const text = await r.text();
+      if (text.trimStart().startsWith("<")) return new Map<string, IssueRecord>(); // a host that answers 404 with an HTML page
+      const recs = text.split("\n").filter((l) => l.trim()).map((l) => IssueRecord.parse(JSON.parse(l)));
+      return new Map(recs.map((rec) => [rec.file, rec]));
+    });
+    p.catch(() => cache.delete("jsonl:issues.jsonl"));
+    cache.set("jsonl:issues.jsonl", p);
   }
   return p;
 }
@@ -84,6 +103,10 @@ export function useSwitchToLatest(): string | null {
 export function useUpstream(upstream: Meta["upstream"] | null): Loaded<Map<string, UpstreamRecord>> {
   const loaded = useLoaded(upstream ? () => loadUpstream(upstream.file) : null, `upstream:${upstream?.file ?? ""}`);
   return upstream ? loaded : { status: "ok", data: new Map() };
+}
+
+export function useIssues(): Loaded<Map<string, IssueRecord>> {
+  return useLoaded(loadIssues, "issues");
 }
 
 export function useFile(id: string | undefined): Loaded<FileEntry> {

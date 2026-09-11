@@ -11,7 +11,7 @@ import { TopBar } from "../components/TopBar";
 import { ConfidenceContext, effectiveState, showConfidence } from "../data/confidence";
 import { DEFAULT_STATE, applyFilters, defaultShow, neighbours, parseState } from "../data/filters";
 import { useFile, useIndex, useUpstream } from "../data/load";
-import { summaryParts } from "../data/labels";
+import { fixLabel, summaryParts, trivialProofLabel } from "../data/labels";
 import type { FileEntry, UpstreamRecord } from "../data/schema";
 
 export function FilePage() {
@@ -149,15 +149,22 @@ function UpstreamLink({ rec }: { rec: UpstreamRecord }) {
 function Summary({ entry, upstream }: { entry: FileEntry; upstream: UpstreamRecord | null }) {
   const parts = summaryParts(entry);
   const misf = entry.review.findings.filter((f) => f.severity === "misformalization").length;
+  const outcomes = Boolean(fixLabel(entry.fix) || upstream); // anything for the second line: what was done about the problems
   return (
     <div className={`status-line`}>
       <div className={`status ${misf ? "warn" : ""}`}>
-        <strong>{parts.join(" · ")}</strong> <TrivialProofChip trivialProof={entry.trivial_proof} /> <FixChip fix={entry.fix} />
-        {upstream && (
+        <strong>{parts.join(" · ")}</strong>
+        {trivialProofLabel(entry.trivial_proof) && (
           <>
             {" "}
-            <UpstreamLink rec={upstream} />
+            <TrivialProofChip trivialProof={entry.trivial_proof} />
           </>
+        )}
+        {outcomes && (
+          <div className="status-fixes">
+            <FixChip fix={entry.fix} />
+            {upstream && <UpstreamLink rec={upstream} />}
+          </div>
         )}
       </div>
       {entry.sample.transcript_url && (
@@ -186,7 +193,7 @@ function TrivialProofSection({ entry }: { entry: FileEntry }) {
         or a computation on which a definition and the intended notion disagree. It could bail out when no defect admitted a short proof. The compile check is the harness's
         own run of <code>lake env lean</code> on the file, which must report no errors and no <code>sorry</code>. Unreviewed by a human.
       </p>
-      <div className={`status ${tp.gave_up ? "" : ok ? "fc" : "warn"}`}>
+      <div className={`status ${tp.gave_up ? "" : ok ? "tp" : "warn"}`}>
         <TrivialProofChip trivialProof={tp} />{" "}
         {ok && (
           <span className="muted">

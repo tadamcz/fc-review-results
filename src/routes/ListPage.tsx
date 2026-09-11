@@ -1,6 +1,6 @@
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { RowChips } from "../components/Chips";
+import { FixChips, ProblemChips } from "../components/Chips";
 import { CommitAge } from "../components/CommitAge";
 import { TopBar } from "../components/TopBar";
 import { ConfidenceContext, effectiveState, showConfidence } from "../data/confidence";
@@ -240,7 +240,14 @@ const Row = memo(function Row({ row, search, showCollection, showConf }: { row: 
         <Link to={{ pathname: `/f/${row.id}`, search }} className="row-title">
           {row.id}
         </Link>
-        <RowChips row={row} />
+        <span className="chips">
+          <ProblemChips row={row} />
+          {showConf && row.max_confidence !== null && (
+            <span className="counts" title="highest confidence among the misformalizations">
+              p ≤ {row.max_confidence.toFixed(2)}
+            </span>
+          )}
+        </span>
       </div>
       <div className="row-line2">
         <span className="row-statement">
@@ -248,11 +255,7 @@ const Row = memo(function Row({ row, search, showCollection, showConf }: { row: 
           {row.headline && <span className="headline">{row.headline}</span>}
           {!row.headline && row.n_status_issues > 0 && <span className="muted">status issue only</span>}
         </span>
-        {showConf && row.max_confidence !== null && (
-          <span className="counts">
-            <span title="highest confidence among the misformalizations">p ≤ {row.max_confidence.toFixed(2)}</span>
-          </span>
-        )}
+        <FixChips row={row} />
       </div>
     </li>
   );

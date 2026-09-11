@@ -14,11 +14,11 @@ export function fixLabel(fix: FixRow): { text: string; cls: string } | null {
 
 export function trivialProofLabel(tp: TrivialProofRow): { text: string; cls: string } | null {
   if (!tp.attempted) return null;
-  if (tp.gave_up) return { text: "trivial proof: bailed out", cls: "fix-gaveup" };
-  if (!tp.written) return { text: "no trivial-proof file", cls: "fix-none" };
-  if (trivialProofCompiles(tp)) return { text: "trivial proof compiles", cls: "fix-ok" };
-  if (tp.compile_ok) return { text: "trivial proof uses sorry", cls: "fix-bad" };
-  return { text: "trivial proof does not compile", cls: "fix-bad" };
+  if (tp.gave_up) return { text: "trivial proof: bailed out", cls: "tp-none" };
+  if (!tp.written) return { text: "no trivial-proof file", cls: "tp-none" };
+  if (trivialProofCompiles(tp)) return { text: "trivial proof compiles", cls: "tp-ok" };
+  if (tp.compile_ok) return { text: "trivial proof uses sorry", cls: "tp-weak" };
+  return { text: "trivial proof does not compile", cls: "tp-weak" };
 }
 
 // The summary band's counts, left to right: "1 misformalization", "1 status issue", "2 equivalent reformulations"

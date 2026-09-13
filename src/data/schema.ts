@@ -32,6 +32,10 @@ export type StatusIssue = z.infer<typeof StatusIssue>;
 
 export const Reformulation = z.object({
   declaration: z.string(),
+  // "negated_conjecture": an answer(sorry) slot whose right-hand side is the negation of what the source asks —
+  // the unknown answer inverts, nothing else changes; "other" for every other reformulation (and for data
+  // exported before the field existed)
+  kind: z.string().default("other"),
   difference: z.string(),
   equivalence_argument: z.string().default(""),
   proved_in_lean: z.boolean().default(false),

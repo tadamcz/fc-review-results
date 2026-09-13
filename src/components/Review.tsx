@@ -175,6 +175,11 @@ export function Reformulations({ items, search }: { items: Reformulation[]; sear
           <li key={i} className="finding reform">
             <div className="finding-head">
               <DeclLink name={r.declaration} line={r.line} search={search} />
+              {r.kind === "negated_conjecture" && (
+                <span className="chip kind" title="The answer slot's right-hand side is the negation of what the source asks; the unknown answer inverts, nothing else changes">
+                  negated conjecture
+                </span>
+              )}
               {r.proved_in_lean && <span className="chip proved">↔ proved in Lean</span>}
               <Confidence value={r.confidence} />
             </div>

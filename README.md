@@ -55,7 +55,9 @@ run: `drafts.jsonl` (one line per flagged file not already reported upstream:
 the issue title's gist, a one-sentence summary, and for files with an existing
 thread the "Related:" comment pointing at it; written by language-model agents
 from the findings, then reviewed) and `created.jsonl` (what `pnpm issues`
-created, so a re-run never files a file twice). `pnpm run` with the `--`
+created, so a re-run never files a file twice), and optionally `skipped.jsonl` (one
+line per flagged file a human decided not to file, with the reason; the script
+excludes these and reports their count). `pnpm run` with the `--`
 separator matters: bare `pnpm issues --run` hands the flag to pnpm.
 
 ```sh

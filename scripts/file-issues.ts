@@ -1,7 +1,8 @@
 // Files one GitHub issue per flagged file of a run whose misformalizations nobody has reported on
-// google-deepmind/formal-conjectures — the run's flagged files minus those in its upstream.jsonl —
-// from the reviewed drafts in issues/<sha>/drafts.jsonl, and records what it created in
-// issues/<sha>/created.jsonl so that a re-run never files a file twice.
+// google-deepmind/formal-conjectures — the run's flagged files minus those in its upstream.jsonl and
+// minus those a human set aside in issues/<sha>/skipped.jsonl ({"file", "reason"}) — from the reviewed
+// drafts in issues/<sha>/drafts.jsonl, and records what it created in issues/<sha>/created.jsonl so that a
+// re-run never files a file twice.
 //
 //   pnpm run issues -- --run c90271f0fa         dry run: validates the drafts against the run, checks the
 //                                           labels exist, writes issues/<sha>/preview.md, creates nothing
@@ -46,6 +47,7 @@ const Draft = z.object({
   related_comments: z.array(z.object({ number: z.number(), type: z.enum(["pr", "issue"]), comment: z.string().min(1) })).default([]),
 });
 type Draft = z.infer<typeof Draft>;
+const Skipped = z.object({ file: z.string(), reason: z.string().min(1) });
 const Created = z.object({ file: z.string(), number: z.number(), url: z.string(), created_at: z.string(), comment_url: z.string().nullable() });
 type Created = z.infer<typeof Created>;
 
@@ -83,18 +85,22 @@ async function main() {
   const index = IndexFile.parse(JSON.parse(readFileSync(join(runDir, "index.json"), "utf8")));
   const covered = new Set(index.meta.upstream ? readJsonl(join(runDir, index.meta.upstream.file), UpstreamRecord).map((r) => r.file) : []);
   const flagged = index.files.filter((r) => r.n_misformalizations > 0).map((r) => r.id);
-  const all = flagged.filter((id) => !covered.has(id)).sort();
-
-  // the drafts must cover exactly that set
   const dir = join(ISSUES_DIR, sha);
   mkdirSync(dir, { recursive: true });
+  const skipped = readJsonl(join(dir, "skipped.jsonl"), Skipped);
+  const unknownSkip = skipped.filter((k) => !flagged.includes(k.file) || covered.has(k.file));
+  if (unknownSkip.length) throw new Error(`issues/${sha}/skipped.jsonl names files that are not flagged or are already covered upstream: ${unknownSkip.map((k) => k.file).join(", ")}`);
+  const skip = new Set(skipped.map((k) => k.file));
+  const all = flagged.filter((id) => !covered.has(id) && !skip.has(id)).sort();
+
+  // the drafts must cover exactly that set
   const drafts = new Map(readJsonl(join(dir, "drafts.jsonl"), Draft).map((d) => [d.file, d]));
   const missing = all.filter((t) => !drafts.has(t));
   const extra = [...drafts.keys()].filter((f) => !all.includes(f));
   if (missing.length || extra.length) {
     const show = (xs: string[]) => xs.slice(0, 5).join(", ") + (xs.length > 5 ? ", …" : "");
     throw new Error(
-      `issues/${sha}/drafts.jsonl must cover exactly the ${all.length} flagged files not already reported upstream: ` +
+      `issues/${sha}/drafts.jsonl must cover exactly the ${all.length} flagged files not already reported upstream or skipped: ` +
         `${missing.length} missing (${show(missing)}), ${extra.length} extra (${show(extra)})`,
     );
   }
@@ -160,7 +166,7 @@ async function main() {
   }
   writeFileSync(join(dir, "preview.md"), preview.join("\n"));
   const todo = targets.filter((t) => !created.has(t));
-  console.log(`${all.length} files to report for ${sha}; ${targets.length} selected; ${targets.length - todo.length} created already; ${todo.length} to create. Preview: issues/${sha}/preview.md`);
+  console.log(`${all.length} files to report for ${sha} (${covered.size} covered upstream, ${skip.size} skipped); ${targets.length} selected; ${targets.length - todo.length} created already; ${todo.length} to create. Preview: issues/${sha}/preview.md`);
   const publish = () => {
     // the sidecar the site serves: what was filed, in file order
     const paths = new Map(index.files.map((r) => [r.id, r.path]));

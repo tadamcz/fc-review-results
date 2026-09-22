@@ -1,0 +1,2 @@
+{"file": "ErdosProblems/189", "reason": "The declaration states the negation of an open conjecture (¬ Erdos189For …, category research open). Its truth value is exactly the unknown one, inverted; we do not treat a pure flip of an unknown truth value as a misformalization."}
+{"file": "ErdosProblems/329", "reason": "The unsourced converse is, as its own docstring says, equivalent to the negation of the Erdős–Krückeberg conjecture recorded in the same file. A pure flip of an unknown truth value, not a misformalization."}

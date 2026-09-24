@@ -4,6 +4,9 @@
 // drafts in issues/<sha>/drafts.jsonl, and records what it created in issues/<sha>/created.jsonl so that a
 // re-run never files a file twice.
 //
+//   pnpm run issues -- --run c90271f0fa --preview  render issues/<sha>/preview.md without touching GitHub (no
+//                                              label check, no lookup of already-filed issues); for reviewing
+//                                              drafts before the run's label exists
 //   pnpm run issues -- --run c90271f0fa         dry run: validates the drafts against the run, checks the
 //                                           labels exist, writes issues/<sha>/preview.md, creates nothing
 //   pnpm run issues -- --run c90271f0fa --create   files the issues and their "Related:" comments, pausing
@@ -75,6 +78,8 @@ async function main() {
   if (!sha || !SHA.test(sha)) throw new Error("--run <the run's ten-character fc sha> is required");
   const repo = arg("--repo") ?? REPO_DEFAULT;
   const create = flag("--create");
+  const previewOnly = flag("--preview");
+  if (create && previewOnly) throw new Error("--preview and --create are exclusive");
   const limit = arg("--limit") ? Number(arg("--limit")) : Infinity;
   const only = arg("--only") ? new Set(arg("--only")!.split(",")) : null;
   const sleepMs = arg("--sleep") ? Number(arg("--sleep")) : 2500;
@@ -107,7 +112,7 @@ async function main() {
   const targets = only ? all.filter((t) => only.has(t)) : all;
 
   // the labels must exist, before anything else
-  const absent = labels.filter((l) => {
+  const absent = previewOnly ? [] : labels.filter((l) => {
     try {
       gh(["api", `repos/${repo}/labels/${encodeURIComponent(l)}`]);
       return false;
@@ -121,9 +126,11 @@ async function main() {
   // with the file id (an issue created by an earlier invocation that died before recording it)
   const createdPath = join(dir, "created.jsonl");
   const created = new Map(readJsonl(createdPath, Created).map((c) => [c.file, c]));
-  const onGitHub = JSON.parse(
-    gh(["issue", "list", "--repo", repo, "--label", `ai-audit-${sha}`, "--state", "all", "--limit", "1000", "--json", "number,title,url,createdAt"]),
-  ) as { number: number; title: string; url: string; createdAt: string }[];
+  const onGitHub = previewOnly
+    ? []
+    : (JSON.parse(
+        gh(["issue", "list", "--repo", repo, "--label", `ai-audit-${sha}`, "--state", "all", "--limit", "1000", "--json", "number,title,url,createdAt"]),
+      ) as { number: number; title: string; url: string; createdAt: string }[]);
   for (const t of all) {
     if (created.has(t)) continue;
     const hit = onGitHub.find((i) => i.title.startsWith(`${t}: `));
@@ -138,7 +145,11 @@ async function main() {
   const render = (file: string) => {
     const draft = drafts.get(file)!;
     const entry = FileEntry.parse(JSON.parse(readFileSync(join(runDir, "files", `${file}.json`), "utf8")));
-    const bullets = [...summaryParts(entry), trivialProofLabel(entry.trivial_proof)?.text, fixLabel(entry.fix)?.text].filter((x): x is string => Boolean(x));
+    const confidences = entry.review.findings.filter((f) => f.severity === "misformalization").map((f) => f.confidence);
+    const lo = Math.min(...confidences);
+    const hi = Math.max(...confidences);
+    const confidence = confidences.length ? `reviewer confidence ${lo === hi ? lo : `${lo} to ${hi}`}` : null;
+    const bullets = [...summaryParts(entry), confidence, trivialProofLabel(entry.trivial_proof)?.text, fixLabel(entry.fix)?.text].filter((x): x is string => Boolean(x));
     const title = `${file}: ${draft.title}`;
     if (title.length > 256) throw new Error(`${file}: title longer than GitHub allows (${title.length})`);
     const body =
@@ -186,6 +197,7 @@ async function main() {
       );
     if (lines.length) writeFileSync(join(runDir, "issues.jsonl"), lines.join("\n") + "\n");
   };
+  if (previewOnly) return;
   publish();
   if (!create) return;
 

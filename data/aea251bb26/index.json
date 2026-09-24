@@ -188,8 +188,13 @@
   "n_past_examples": 285,
   "n_counter_examples": 8,
   "note": null,
-  "upstream": null,
-  "generated_at": "2026-09-24T11:50:37+00:00"
+  "upstream": {
+   "file": "upstream.jsonl",
+   "n_files": 8,
+   "n_findings": 12,
+   "checked_at": "2026-09-24T12:14:17Z"
+  },
+  "generated_at": "2026-09-24T12:18:37+00:00"
  },
  "files": [
   {

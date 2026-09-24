@@ -149,7 +149,7 @@ async function main() {
     const lo = Math.min(...confidences);
     const hi = Math.max(...confidences);
     const confidence = confidences.length ? `reviewer confidence ${lo === hi ? lo : `${lo} to ${hi}`}` : null;
-    const bullets = [...summaryParts(entry), confidence, trivialProofLabel(entry.trivial_proof)?.text, fixLabel(entry.fix)?.text].filter((x): x is string => Boolean(x));
+    const bullets = [confidence, ...summaryParts(entry), trivialProofLabel(entry.trivial_proof)?.text, fixLabel(entry.fix)?.text].filter((x): x is string => Boolean(x));
     const title = `${file}: ${draft.title}`;
     if (title.length > 256) throw new Error(`${file}: title longer than GitHub allows (${title.length})`);
     const body =
